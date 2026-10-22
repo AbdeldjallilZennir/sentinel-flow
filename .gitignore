@@ -1,0 +1,28 @@
+# Build artifacts
+sentinel-flow/sensor-c/build/
+*.o
+*.a
+*.so
+*.so.*
+
+# Claude Code local state
+.claude/settings.local.json
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local secrets / env
+.env
+.env.local
+*.key
+*.pem
