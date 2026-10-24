@@ -6,7 +6,7 @@ SentinelFlow watches network flows, recognises command-and-control (C2) traffic 
 - **Plane 2:** a Python daemon validates and stores them (SQLite / ClickHouse) and scores them with a LightGBM model exported to ONNX.
 - **Plane 3:** blocks the remote C2 address through an nftables set with per-address drop counters.
 
-> **How to read this README.** Every number below was measured on the reference host and is quoted from a report in `sentinel-flow/`: [`part1.md`](sentinel-flow/part1.md), [`part1_2.md`](sentinel-flow/part1_2.md), [`part2.md`](sentinel-flow/part2.md), [`Part3.md`](sentinel-flow/Part3.md), [`Part4.md`](sentinel-flow/Part4.md), [`Part5.md`](sentinel-flow/Part5.md), [`Part6.md`](sentinel-flow/Part6.md). Each report ends with a "may / must not be said" section, and this README follows it. Limits are listed in [What is not shown](#what-is-not-shown).
+> **How to read this README.** Every number below was measured on the reference host and is quoted from a report in `sentinel-flow/`: [`part1.md`](sentinel-flow/part1.md), [`part1_2.md`](sentinel-flow/part1_2.md), [`part2.md`](sentinel-flow/part2.md), [`Part3.md`](sentinel-flow/Part3.md), [`Part4.md`](sentinel-flow/Part4.md), [`Part5.md`](sentinel-flow/Part5.md), [`Part6.md`](sentinel-flow/Part6.md), [`Part7.md`](sentinel-flow/Part7.md). Each report ends with a "may / must not be said" section, and this README follows it. Limits are listed in [What is not shown](#what-is-not-shown).
 
 **Status (2026-10-24):**
 
@@ -14,7 +14,7 @@ SentinelFlow watches network flows, recognises command-and-control (C2) traffic 
 |---|---|
 | 1. C sensor | done |
 | 2. Ingestion & analytics | done |
-| 3. ML pipeline | done |
+| 3. ML pipeline | done; dataset expanded and model retrained in Part 7 |
 | 4. Kernel mitigation | done with nftables; per-IP blocking rule + scan detector (Part 6); XDP experimental, not attached |
 | Packaging & VM install | done: installer, live runner, lab guide; fresh Ubuntu 24.04 VM passes all tests (Part 5) |
 | 5. Demo | not started |
@@ -78,9 +78,9 @@ The original blueprint and roadmap are kept in [`sentinel-flow/docs/BLUEPRINT.md
 | Sensor throughput | **~0.40 Mpps median**, 25.8 MB peak RSS, 0 flows dropped | Offline, single thread, i7-1165G7. 124,070 packets merged from 576 nDPI test captures. Current binary: medians 407 k pps (`-A 60`) and 400 k pps (`-A 0`), range 0.36–0.42 Mpps over 10 runs. Before the Phase 4 changes: 0.40–0.44 Mpps. Live-capture throughput not measured. | [Part3 §3.2](sentinel-flow/Part3.md) |
 | Memory safety | **0** AddressSanitizer / LeakSanitizer / UBSan errors | 16 PCAPs (1,890 flows) in Part 3; 10 PCAPs with `-A 30` in Part 4. LeakSanitizer shown active on a deliberate 4,242-byte leak. | [Part3 §3.1](sentinel-flow/Part3.md), [Part4 §1.2](sentinel-flow/Part4.md) |
 | Delivery sensor → consumer | 9,694 / 9,694 flows, 0 dropped | Same merged capture, consumer attached. Earlier silent loss fixed (receive high-water mark). | [Part3 §3.6](sentinel-flow/Part3.md) |
-| Labeled dataset | **9,659 flows from 601 PCAPs** | 1,825 malicious flows from 28 captures / 25 families (malware-traffic-analysis.net with hand-curated IOC labels, plus nDPI samples). 0 dropped, 0 rejected. Built through the production sensor → ZMQ path. | [Part3 §4–5](sentinel-flow/Part3.md) |
-| Model quality (grouped CV) | **ROC-AUC 0.980 ± 0.001, PR-AUC 0.905 ± 0.007** | 5-fold grouped by capture, 5 seeds. At the 0.80 alert threshold: recall 0.45 ± 0.04, precision 0.91 ± 0.03, FPR 1.1 % ± 0.4 %. | [Part3 §7.1](sentinel-flow/Part3.md) |
-| Unseen infections (holdout) | **5 / 5 infections detected**; precision 99.6 %, FPR 0.6 % | 5 captures never used in training, replayed through the live daemon. 15 / 23 malicious endpoints alerted by ML (16 / 23 with severe-risk blocking under the per-flow rule; 14 / 23 under the Part 6 per-IP rule). 3 false alerts out of 498 benign flows. Flow-level recall 23 %. Same results after the Part 5 retrain (`2005d025`). | [Part3 §9.1](sentinel-flow/Part3.md), [Part4 §5](sentinel-flow/Part4.md), [Part5 §5](sentinel-flow/Part5.md) |
+| Labeled dataset | **12,250 flows from 624 PCAPs** | 2,846 malicious flows from 51 captures (40 malware-traffic-analysis.net cases with hand-curated IOC labels, plus nDPI samples). 0 rejected. Built through the production sensor → ZMQ path. Part 3 had 9,659 flows / 28 malicious captures; 23 cases added in Part 7. | [Part3 §4–5](sentinel-flow/Part3.md), [Part7 §1–2](sentinel-flow/Part7.md) |
+| Model quality (grouped CV) | **ROC-AUC 0.984 ± 0.001, PR-AUC 0.945 ± 0.005** | Current model `203d33a1`, 5-fold grouped by capture, 5 seeds. At the 0.80 alert threshold: recall 0.65 ± 0.04, precision 0.95 ± 0.01, FPR 1.0 % ± 0.1 %. Part 3 model on the smaller set: PR-AUC 0.905, recall 0.45 (different data, not like-for-like). | [Part7 §0](sentinel-flow/Part7.md), [Part3 §7.1](sentinel-flow/Part3.md) |
+| Unseen infections (holdout) | **5 / 5 infections detected**; 17 / 23 malicious endpoints alerted; precision 98.6 %, FPR 2.4 % | Current model `203d33a1`. 5 captures never used in training, replayed through the live daemon. Per-IP blocking: 14 / 23 malicious IPs, 2 benign (Microsoft) IPs. 12 false alerts out of 498 benign flows: 7 internal (never blocked, 6 likely attacker WinRM), 2 Microsoft, 3 long Google TLS sessions (alerted, not blocked). Previous model `2005d025`: 15 / 23 endpoints, 3 false alerts, same blocking result. | [Part7 §3](sentinel-flow/Part7.md), [Part3 §9.1](sentinel-flow/Part3.md) |
 | ONNX export | 0 / 9,597 alert decisions differ from the native models | max \|Δp\| 3.7e-4 (LightGBM) | [Part3 §8.1](sentinel-flow/Part3.md) |
 | Batch scoring in the daemon | **740 flows in 40.3 ms**; 1,000-flow batches in 36–47 ms | Feature extraction + both ONNX models, 1 onnxruntime thread | [Part4 §7.2](sentinel-flow/Part4.md), [Part3 §9.2](sentinel-flow/Part3.md) |
 | Closed loop (capture → score → block → drop) | **0 / 50 packets delivered from the blocked C2 address; nft counter exactly 50 packets / 6,400 bytes; 50 / 50 delivered from a normal peer** | Holdout DarkGate capture replayed with `sensor -r`. Daemon scored it (0.991) and blocked both C2 endpoints in nftables automatically. Throwaway network namespaces. | [Part4 §7.2](sentinel-flow/Part4.md) |
@@ -264,5 +264,5 @@ sentinel-flow/
 ├── tests/verify_closed_loop.sh
 ├── docs/                screenshots, original blueprint
 ├── docker-compose.yml   ClickHouse + Grafana
-└── part1.md · part1_2.md · part2.md · Part3.md … Part6.md   phase reports
+└── part1.md · part1_2.md · part2.md · Part3.md … Part7.md   phase reports
 ```
