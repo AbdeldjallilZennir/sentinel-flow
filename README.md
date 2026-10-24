@@ -89,7 +89,7 @@ The original blueprint and roadmap are kept in [`sentinel-flow/docs/BLUEPRINT.md
 ### One-command setup (Ubuntu / Debian / Kali)
 
 ```bash
-git clone <this repository> && cd <repository>
+git clone https://github.com/AbdeldjallilZennir/sentinel-flow && cd <repository>
 bash sentinel-flow/scripts/install_deps.sh            # core: packages, nDPI (pinned commit), sensor, ONNX runtime, tests
 bash sentinel-flow/scripts/install_deps.sh --all      # + training venv, tshark/7z, Docker, clang (see --help)
 ```
