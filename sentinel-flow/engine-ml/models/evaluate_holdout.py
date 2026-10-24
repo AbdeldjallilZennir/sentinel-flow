@@ -49,11 +49,22 @@ def run_pipeline(pcap, risk_policy, tmp):
                           "--rejected", os.path.join(tmp, "rejected.jsonl"),
                           "--scorer", "onnx", "--alert-risk-policy", risk_policy],
                          stderr=log)
-    for _ in range(100):
+    # Wait for the daemon to bind its endpoint before replaying. Loading
+    # numpy/onnxruntime + the models can take well over 10 s on small cloud
+    # machines; a sensor that finds no consumer discards its flows at exit.
+    t0 = time.time()
+    while True:
         log.seek(0)
-        if " ready" in log.read():
+        text = log.read()
+        if " ready" in text:
             break
-        time.sleep(0.1)
+        if d.poll() is not None or time.time() - t0 > 180:
+            d.kill()
+            raise RuntimeError("daemon.py did not become ready "
+                               f"({'exited' if d.returncode is not None else 'timeout'}); "
+                               "last log lines:\n" + "\n".join(text.splitlines()[-8:]))
+        time.sleep(0.2)
+    print(f"    daemon ready after {time.time() - t0:.1f} s", flush=True)
     # -A 0: same flow definition as the training set (see build_dataset.py).
     s = subprocess.run([bd.SENSOR, "-r", pcap, "-z", ep, "-A", "0"],
                        capture_output=True, text=True)
