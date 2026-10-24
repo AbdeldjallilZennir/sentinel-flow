@@ -43,7 +43,7 @@ while [[ $# -gt 0 ]]; do
         --ndpi-dir)      NDPI_DIR=$2; shift ;;
         --ndpi-ref)      NDPI_REF=$2; shift ;;
         --skip-tests)    RUN_TESTS=0 ;;
-        -h|--help)       sed -n '2,32p' "$0"; exit 0 ;;
+        -h|--help)       sed -n '2,/^set -euo/{/^set -euo/!p}' "$0"; exit 0 ;;
         *) echo "unknown option: $1 (see --help)"; exit 2 ;;
     esac
     shift
