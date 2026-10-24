@@ -8,7 +8,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 export LD_LIBRARY_PATH=${NDPI_DIR:-/root/nDPI}/src/lib
 OUT=/root/sentinel_model.zip
 echo "==> holdout evaluation"
-python3 "$ROOT/engine-ml/models/evaluate_holdout.py" 2>&1 | tail -14
+python3 "$ROOT/engine-ml/models/evaluate_holdout.py" 2>&1 | grep -v "daemon ready"
 echo "==> package"
 cd "$ROOT/engine-ml/models"
 rm -f "$OUT"

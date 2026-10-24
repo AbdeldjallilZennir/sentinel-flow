@@ -134,6 +134,178 @@
       "malicious_ips": ["193.187.91.217"],
       "malicious_domains": [],
       "ambiguous_domains": ["pastebin.com"]
+    },
+    "2023-01-03": {
+      "family": "Rhadamanthys Stealer",
+      "malicious_ips": ["162.33.178.106"],
+      "malicious_domains": ["noteepad.hasankahrimanoglu.com.tr"],
+      "ambiguous_domains": [],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2023-04-13": {
+      "family": "MetaStealer",
+      "malicious_ips": ["185.172.129.192"],
+      "malicious_domains": ["wgcuwcgociewewoo.xyz", "kvckz.engineercoin.xyz"],
+      "ambiguous_domains": ["github.com"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2023-08-01": {
+      "family": "Bandook",
+      "malicious_ips": ["185.10.68.52", "185.10.68.127"],
+      "malicious_domains": ["vrunabo.su", "demando.ru"],
+      "ambiguous_domains": [],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2023-08-03": {
+      "family": "DanaBot (fake TurboTax ad)",
+      "malicious_ips": ["45.61.169.91", "167.88.166.193"],
+      "malicious_domains": ["bildhm.com", "tunbontaxes.com", "intrigi.net", "countingstatistic.com"],
+      "ambiguous_domains": ["4sync.com"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2023-09-28": {
+      "family": "IcedID + Keyhole VNC + Cobalt Strike",
+      "malicious_ips": ["155.138.160.67", "157.245.102.160", "157.245.106.203", "172.86.75.88", "141.98.80.158"],
+      "malicious_domains": ["carsfootyelo.com", "majzolimka.com", "awindakizend.com", "feekstokandy.com", "umomrmwa.com",
+                           "skillerszone.com", "abelinis.com"],
+      "ambiguous_domains": [],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2023-10-11": {
+      "family": "Lumma Stealer",
+      "malicious_ips": [],
+      "malicious_domains": ["teleportfilmona.online"],
+      "ambiguous_domains": ["dropbox.com", "dropboxusercontent.com"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2023-11-22": {
+      "family": "AgentTesla (FTP exfil)",
+      "malicious_ips": ["45.138.16.176", "51.222.104.17"],
+      "malicious_domains": ["ftp.siscop.com.co"],
+      "ambiguous_domains": ["paste.ee", "uploaddeimagens.com.br"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2023-11-27": {
+      "family": "IcedID variant",
+      "malicious_ips": [],
+      "malicious_domains": ["mazdakrichest.com", "mraskopal.link", "missisanjoup.shop"],
+      "ambiguous_domains": ["bigsurlibros.com.ar"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2024-01-12": {
+      "family": "StealC",
+      "malicious_ips": ["109.107.181.33"],
+      "malicious_domains": ["mimsmehediclub.com"],
+      "ambiguous_domains": ["erp.wesmarines.com"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2024-01-23": {
+      "family": "UltraVNC",
+      "malicious_ips": ["140.228.29.110"],
+      "malicious_domains": ["vnvariant2024.ddnsfree.com"],
+      "ambiguous_domains": ["dropbox.com", "dropboxusercontent.com", "example.com"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2024-04-17": {
+      "family": "SSLoad",
+      "malicious_ips": ["85.239.53.219"],
+      "malicious_domains": ["necrtlr4.org", "mmqsrsl.org", "krd6.com"],
+      "ambiguous_domains": ["corsproxy.io", "pastebin.com", "firebasestorage.googleapis.com", "akshayascientifics.com",
+                           "iespppomabamba.edu.pe", "jacolinktravel.com", "lapataca.com",
+                           "prominencedigiworld.com", "rummyking24.com", "mlmigration.com",
+                           "prottahobarta.com"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2024-05-14": {
+      "family": "DarkGate",
+      "malicious_ips": ["91.222.173.186"],
+      "malicious_domains": ["flexiblemaria.com"],
+      "ambiguous_domains": ["rockcreekdds.com"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2024-06-17": {
+      "family": "Matanbuchus + DanaBot",
+      "malicious_ips": ["47.89.157.126", "8.211.34.5", "194.67.193.204", "194.67.193.206", "47.254.129.255", "34.130.217.52"],
+      "malicious_domains": ["treasuryfinance.org", "aceranes.com", "ricoshea.com", "ahazko.com", "ycchio.com"],
+      "ambiguous_domains": [],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2024-08-12": {
+      "family": "XLoader/Formbook",
+      "malicious_ips": [],
+      "malicious_domains": ["354388.pet", "618110.com", "agiantsbar.com", "agrigatefarm.online", "airbnbneuchatel.com",
+                           "alohaconnect.org", "askvanta.com", "barbie69.xyz", "by2526.com",
+                           "coffeemakers.online", "connectionbyebd.com", "cradunk.com", "daisseur.online",
+                           "denflos.top", "doonsideproperty.com", "dressroza.com", "dulichngaaz.info",
+                           "forexpp.store", "globalexecutive.agency", "hachettegroup.media", "huanle.store",
+                           "ontoweightloss.health", "physicallyfit.org", "pmcq1.xyz", "ppsonco.store",
+                           "qkotc.xyz", "screw.lol", "sisouehnmnxxd.top", "steelplaque.info", "ueimg.xyz",
+                           "wowsomefan.store", "yu86h.top"],
+      "ambiguous_domains": [],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2024-09-16": {
+      "family": "Snake KeyLogger (SMTP exfil)",
+      "malicious_ips": ["208.91.199.223"],
+      "malicious_domains": ["smtp.inhousepick.com"],
+      "ambiguous_domains": ["checkip.dyndns.org", "reallyfreegeoip.org", "api.telegram.org"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2024-12-04": {
+      "family": "AgentTesla variant (FTP exfil)",
+      "malicious_ips": ["192.254.225.136"],
+      "malicious_domains": ["ftp.ercolina-usa.com"],
+      "ambiguous_domains": ["api.ipify.org"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2025-02-10": {
+      "family": "StrelaStealer",
+      "malicious_ips": ["193.143.1.205"],
+      "malicious_domains": [],
+      "ambiguous_domains": [],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2025-05-12": {
+      "family": "PureLogs-style RAT (unidentified)",
+      "malicious_ips": ["176.65.144.169"],
+      "malicious_domains": ["mxcnss.dns04.com"],
+      "ambiguous_domains": [],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2025-06-26": {
+      "family": "Lumma Stealer + Rsockstun",
+      "malicious_ips": ["144.172.115.212", "144.172.112.32", "86.54.25.40"],
+      "malicious_domains": ["genhqq.xyz", "metallurgify.com", "gohhs.com", "cloud839v3.cyou", "kot3jsd.my"],
+      "ambiguous_domains": ["github.com", "githubusercontent.com", "api.telegram.org", "facebook.com"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2025-07-08": {
+      "family": "Koi Loader/Koi Stealer",
+      "malicious_ips": ["193.29.57.167"],
+      "malicious_domains": [],
+      "ambiguous_domains": ["sites.google.com", "googleusercontent.com", "nasilics.com", "conleyuniversity.us"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2026-01-20": {
+      "family": "XWorm",
+      "malicious_ips": ["158.94.209.180"],
+      "malicious_domains": ["berlin101.com"],
+      "ambiguous_domains": ["res.cloudinary.com", "r2.dev"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2026-01-29": {
+      "family": "njRAT + MassLogger",
+      "malicious_ips": ["104.248.130.195", "78.110.166.82"],
+      "malicious_domains": ["cphost14.qhoster.net"],
+      "ambiguous_domains": ["ip-api.com", "api.telegram.org", "checkip.dyndns.org", "reallyfreegeoip.org"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
+    },
+    "2026-02-02": {
+      "family": "KongTuke ClickFix + MintsLoader + GhostWeaver RAT",
+      "malicious_ips": ["144.31.238.37", "85.137.253.64", "64.52.80.153", "173.232.146.62"],
+      "malicious_domains": ["soulversr.com", "sbwur1.top", "gecdfcjcbcmmakk.top"],
+      "ambiguous_domains": ["oceanbistrooumc.com", "checkip.dyndns.org", "ipinfo.io"],
+      "note": "added 2026-10-24 (Part 7) from the case's IOC text / page"
     }
   }
 }
