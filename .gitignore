@@ -36,7 +36,7 @@ sentinel-flow/engine-ml/datasets/mta/
 sentinel-flow/engine-ml/datasets/mta_holdout/
 sentinel-flow/engine-ml/.venv-train/
 
-# Phase 4 build outputs (rebuild: see sentinel-flow/Part4.md §6)
+# Phase 4 build outputs (rebuild: see sentinel-flow/docs/REPORT.md, Part 4 §6)
 sentinel-flow/mitigation-ebpf/*.o
 sentinel-flow/mitigation-ebpf/xdp_ctl
 

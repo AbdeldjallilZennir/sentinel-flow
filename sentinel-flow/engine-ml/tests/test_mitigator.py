@@ -194,13 +194,13 @@ class Scans(unittest.TestCase):
         self.assertEqual(ds, [])
 
     def test_lab_nmap_session(self):
-        """The 2026-10-24 lab session (1,002 ports in 220 s) if its flows are present."""
-        path = os.environ.get("SENTINEL_NMAP_FLOWS")
-        if not path or not os.path.exists(path):
-            self.skipTest("set SENTINEL_NMAP_FLOWS to the session's flows.jsonl")
+        """The 2026-10-24 lab nmap session (1,137 flows, 1,002 ports in 220 s)."""
+        import gzip
         import json
-        with open(path) as fh:
+        path = os.path.join(os.path.dirname(__file__), "data", "lab_nmap_flows.jsonl.gz")
+        with gzip.open(path, "rt") as fh:
             flows = [json.loads(line) for line in fh]
+        self.assertEqual(len(flows), 1137)
         ds = self.run_flows(flows)
         scans = [d for d in ds if d.reason == "scan"]
         self.assertTrue(scans)

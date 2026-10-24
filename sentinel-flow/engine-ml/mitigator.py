@@ -18,10 +18,10 @@ Policy (decisions() / decide()), decided per remote IP, not per flow:
                      malicious cert SHA-1, possible exploit, malware host)
     Records scored by the Phase 2 heuristic are not trusted to block.
     Any other nDPI risk never blocks on its own: in Phase 3 the "any risk"
-    rule alerted on 18 % of real Windows background flows (Part3.md §8.4).
+    rule alerted on 18 % of real Windows background flows (docs/REPORT.md, Part 3 §8.4).
     On the out-of-fold training predictions, "one flow >= 0.80" blocked 44
     benign endpoints; "one >= 0.95 or two >= 0.80" blocked 15, keeping 15
-    of the 16 infections caught (Part6.md). high_threshold=0.80 with
+    of the 16 infections caught (docs/REPORT.md, Part 6). high_threshold=0.80 with
     repeat_count=1 restores the per-flow rule.
   * Trigger that blocks the SOURCE of the flow (the scanner):
       - scan: one source reaches scan_ports distinct ports (default 50) on
@@ -44,7 +44,7 @@ Policy (decisions() / decide()), decided per remote IP, not per flow:
       - --allow-private-blocks removes the RFC 1918 ranges (lab use)
       - --allowlist / --allowlist-file: addresses / CIDRs never blocked.
         The built-in list stays minimal on purpose; operators should add
-        their own cloud/CDN/SaaS ranges (see Part4.md).
+        their own cloud/CDN/SaaS ranges (see docs/REPORT.md, Part 4).
   * IPv4 only (the sensor and the XDP map are IPv4).
 """
 

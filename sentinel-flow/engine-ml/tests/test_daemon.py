@@ -8,7 +8,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import daemon  # noqa: E402
 
-# Real record captured from sensor on test_tls_full.pcap (part1_2.md §2.6).
+# Real record captured from sensor on test_tls_full.pcap (docs/REPORT.md, Part 1.2 §2.6).
 GOOD = {"src_ip": "192.168.1.13", "dst_ip": "178.62.197.130", "src_port": 55523,
         "dst_port": 443, "protocol": 6, "app_protocol": "TLS.ntop",
         "ja4_client": "t12d6707h2_2955a3196ffa_c83f907a73d3", "ndpi_risk_mask": 0,

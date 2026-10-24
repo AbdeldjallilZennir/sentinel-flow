@@ -1,8 +1,8 @@
-> Original project blueprint and roadmap (the root README.md before 2026-10-24), kept unchanged for reference. The current status is in the root README.md and sentinel-flow/part*.md / Part3.md / Part4.md.
+> Original project blueprint and roadmap (the root README.md before 2026-10-24), kept unchanged for reference. The current status is in the root README.md and [REPORT.md](REPORT.md).
 
 # Project Blueprint: SentinelFlow — Zero-Decrypt Encrypted Traffic Analyzer & XDP IPS
 
-> **Status (2026-10-23):** Phases 1–3 built and verified — see `sentinel-flow/part1.md`, `part1_2.md`, `part2.md`, `Part3.md`.  
+> **Status (2026-10-23):** Phases 1–3 built and verified — see [REPORT.md](REPORT.md), Parts 1–3.  
 > Phase 1: C sensor (nDPI 6.x, JA4, Welford stats, ZMQ) · Phase 2: ingestion daemon, SQLite/ClickHouse, Grafana · Phase 3: labeled dataset, LightGBM + IsolationForest → ONNX, live scoring in `daemon.py`.  
 > **Next:** Phase 4 (nftables / XDP mitigation)
 
@@ -104,7 +104,7 @@ make -j$(nproc)
 - ✅ **Welford's statistics** for IAT and packet length (mean, stddev, min, max)
 - ✅ **uthash** 5-tuple flow table with 30s idle expiration
 - ✅ **ZeroMQ PUSH** non-blocking JSON export over IPC/TCP
-- ✅ **24-field JSON schema** per flow (see [PHASE1_COMPLETE.md](PHASE1_COMPLETE.md))
+- ✅ **24-field JSON schema** per flow (the sensor actually emits 23 fields; see [REPORT.md](REPORT.md), Part 3)
 - ✅ Clean shutdown (SIGINT/SIGTERM), no memory leaks
 
 ### Test Results (Validated on nDPI test corpus)
@@ -114,9 +114,9 @@ http.pcapng      → 10 packets, 1 flow exported    ✅
 443-chrome.pcap  → 1 packet, 1 flow exported      ✅
 ```
 
-**Next:** Phase 4 (active mitigation). Phases 2 and 3 are documented in `sentinel-flow/part2.md` and `sentinel-flow/Part3.md`.
+**Next:** Phase 4 (active mitigation). Phases 2 and 3 are documented in [REPORT.md](REPORT.md), Parts 2 and 3.
 
-See [PHASE1_COMPLETE.md](sentinel-flow/PHASE1_COMPLETE.md) for implementation details.
+See [REPORT.md](REPORT.md), Parts 1 and 1.2, for implementation details.
 
 ---
 

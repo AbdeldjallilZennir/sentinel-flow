@@ -12,7 +12,7 @@
 #   --with-training   ML training virtualenv (lightgbm, scikit-learn, onnx tooling)
 #   --with-data       tools to rebuild the dataset: tshark (labeling), 7z (archives)
 #   --with-docker     Docker + Compose for ClickHouse / Grafana
-#   --with-xdp        clang/llvm for the experimental XDP sources (not attached; see Part4.md §6)
+#   --with-xdp        clang/llvm for the experimental XDP sources (not attached; see docs/REPORT.md, Part 4 §6)
 #   --ndpi-dir DIR    where to clone/build nDPI (default: ~/nDPI, the path the sensor build expects)
 #   --ndpi-ref REF    nDPI commit to build (default: the commit the project was verified with)
 #   --skip-tests      don't run the test suites at the end

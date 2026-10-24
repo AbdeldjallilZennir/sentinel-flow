@@ -80,7 +80,7 @@ ls engine-ml/data/logs/                                               # sensor /
 
 - **Panel 5:** flows with their ML score (`ml_anomaly_score`, 0–1).
 - **Panel 6:** the addresses the policy decided to block. In dry-run they're logged, not enforced.
-- **Blocking policy:** score ≥ 0.80 from the trained model, or a severe nDPI risk. Private (RFC 1918), loopback, link-local, multicast and allowlisted addresses are never blocked. Details: `Part4.md` §2.
+- **Blocking policy (per remote IP):** one flow with score ≥ 0.95, or 2 flows ≥ 0.80 to the same IP within an hour, or a severe nDPI risk; a port scan or host sweep blocks the scanning source. Private (RFC 1918), loopback, link-local, multicast and allowlisted addresses are never blocked; detections on them show as "detected, not blocked" in dashboard panel 6b. Details: [REPORT.md](REPORT.md), Parts 4 and 6.
 
 In `--block` mode:
 

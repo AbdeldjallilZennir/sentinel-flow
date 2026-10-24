@@ -8,7 +8,7 @@ onnxruntime
 
 # If installed, daemon.py binds the ZMQ socket directly instead of spawning
 # sensor-c/build/zmq_sink. Not installed on the reference host, so that
-# path is untested (see part2.md / part3.md).
+# path is untested (see docs/REPORT.md, Parts 2 and 3).
 # pyzmq>=25
 
 # Training dependencies: see requirements-train.txt

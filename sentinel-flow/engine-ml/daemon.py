@@ -438,7 +438,7 @@ class PyZMQTransport:
         self.sock = self.ctx.socket(zmq.PULL)
         self.sock.setsockopt(zmq.LINGER, 0)
         # Unlimited receive queue: with a bounded one, messages in transit
-        # when the sensor disconnects are discarded (see part3.md).
+        # when the sensor disconnects are discarded (see docs/REPORT.md, Part 3).
         self.sock.setsockopt(zmq.RCVHWM, 0)
         _unlink_stale_ipc(endpoint)
         self.sock.bind(endpoint)
@@ -574,7 +574,7 @@ def main():
     ap.add_argument("--alert-risk-policy", choices=["any", "severe", "none"], default="severe",
                     help="which nDPI risks raise is_alert on their own (default severe; "
                          "'any' is the Phase 2 rule, which fires on ~18%% of benign flows, "
-                         "see Part3.md section 8.4)")
+                         "see docs/REPORT.md, Part 3 section 8.4)")
     mg = ap.add_argument_group("Phase 4 mitigation (see mitigator.py)")
     mg.add_argument("--mitigate", choices=["none", "dry-run", "nftables"], default="none",
                     help="block remote endpoints per IP: one flow >= --block-high-score, "

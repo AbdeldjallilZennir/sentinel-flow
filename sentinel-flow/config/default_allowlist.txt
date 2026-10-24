@@ -8,7 +8,7 @@
 # scanners or monitoring from.
 #
 # Note: the first three entries were taken from false blocks on the holdout
-# captures (Part6.md). Holdout results measured WITH this file are therefore
+# captures (docs/REPORT.md, Part 6). Holdout results measured WITH this file are therefore
 # not an independent test.
 
 # Microsoft: blocked on the 2025-12-29 holdout capture (model score >= 0.95)
