@@ -8,15 +8,15 @@
       "test_captures": 102,
       "test_malicious_captures": 4,
       "lgbm": {
-        "tp": 91,
+        "tp": 85,
         "fp": 0,
-        "fn": 121,
+        "fn": 127,
         "tn": 1554,
         "precision": 1.0,
-        "recall": 0.42924528301886794,
+        "recall": 0.4009433962264151,
         "fpr": 0.0,
-        "roc_auc": 0.99322503096088,
-        "pr_auc": 0.9646063162073615
+        "roc_auc": 0.9934648260119958,
+        "pr_auc": 0.9664094335780452
       }
     },
     {
@@ -26,15 +26,15 @@
       "test_captures": 123,
       "test_malicious_captures": 16,
       "lgbm": {
-        "tp": 83,
-        "fp": 20,
-        "fn": 110,
-        "tn": 1535,
-        "precision": 0.8058252427184466,
-        "recall": 0.43005181347150256,
-        "fpr": 0.012861736334405145,
-        "roc_auc": 0.9436149476034186,
-        "pr_auc": 0.6361114840269468
+        "tp": 87,
+        "fp": 18,
+        "fn": 106,
+        "tn": 1537,
+        "precision": 0.8285714285714286,
+        "recall": 0.45077720207253885,
+        "fpr": 0.01157556270096463,
+        "roc_auc": 0.945774119920697,
+        "pr_auc": 0.6551183924019797
       }
     },
     {
@@ -44,15 +44,15 @@
       "test_captures": 112,
       "test_malicious_captures": 2,
       "lgbm": {
-        "tp": 68,
+        "tp": 75,
         "fp": 0,
-        "fn": 239,
+        "fn": 232,
         "tn": 1554,
         "precision": 1.0,
-        "recall": 0.22149837133550487,
+        "recall": 0.24429967426710097,
         "fpr": 0.0,
-        "roc_auc": 0.9783368757310125,
-        "pr_auc": 0.8785283622486626
+        "roc_auc": 0.9741509774083064,
+        "pr_auc": 0.8569710566247274
       }
     },
     {
@@ -69,8 +69,8 @@
         "precision": 1.0,
         "recall": 0.9033816425120773,
         "fpr": 0.0,
-        "roc_auc": 0.9962564269847927,
-        "pr_auc": 0.981593705092426
+        "roc_auc": 0.9966136974385262,
+        "pr_auc": 0.9834959605543965
       }
     },
     {
@@ -80,36 +80,36 @@
       "test_captures": 115,
       "test_malicious_captures": 2,
       "lgbm": {
-        "tp": 35,
-        "fp": 4,
-        "fn": 871,
-        "tn": 1550,
-        "precision": 0.8974358974358975,
-        "recall": 0.03863134657836645,
-        "fpr": 0.002574002574002574,
-        "roc_auc": 0.9863458538955227,
-        "pr_auc": 0.9455870875417739
+        "tp": 41,
+        "fp": 3,
+        "fn": 865,
+        "tn": 1551,
+        "precision": 0.9318181818181818,
+        "recall": 0.04525386313465784,
+        "fpr": 0.0019305019305019305,
+        "roc_auc": 0.9856767836900288,
+        "pr_auc": 0.9483649990968182
       }
     }
   ],
   "oof": {
     "lgbm_raw": {
       "metrics": {
-        "tp": 464,
-        "fp": 24,
-        "fn": 1361,
-        "tn": 7748,
-        "precision": 0.9508196721311475,
-        "recall": 0.25424657534246575,
-        "fpr": 0.003088008234688626,
-        "roc_auc": 0.9787546443502845,
-        "pr_auc": 0.892776167036189
+        "tp": 475,
+        "fp": 21,
+        "fn": 1350,
+        "tn": 7751,
+        "precision": 0.9576612903225806,
+        "recall": 0.2602739726027397,
+        "fpr": 0.0027020072053525477,
+        "roc_auc": 0.9790611890946778,
+        "pr_auc": 0.8978734601354067
       },
       "family_recall": {
         "Gozi/ISFB + Cobalt Strike": {
-          "detected": 35,
+          "detected": 41,
           "flows": 903,
-          "recall": 0.03875968992248062
+          "recall": 0.04540420819490587
         },
         "Pikabot + Cobalt Strike": {
           "detected": 240,
@@ -117,9 +117,9 @@
           "recall": 0.5161290322580645
         },
         "Latrodectus + BackConnect + Keyhole VNC": {
-          "detected": 82,
+          "detected": 79,
           "flows": 165,
-          "recall": 0.49696969696969695
+          "recall": 0.47878787878787876
         },
         "Qakbot + Cobalt Strike + VNC": {
           "detected": 81,
@@ -132,14 +132,14 @@
           "recall": 0.014705882352941176
         },
         "KoiLoader/KoiStealer": {
-          "detected": 2,
+          "detected": 9,
           "flows": 30,
-          "recall": 0.06666666666666667
+          "recall": 0.3
         },
         "Lumma Stealer": {
-          "detected": 7,
+          "detected": 4,
           "flows": 29,
-          "recall": 0.2413793103448276
+          "recall": 0.13793103448275862
         },
         "IcedID": {
           "detected": 13,
@@ -152,9 +152,9 @@
           "recall": 0.08333333333333333
         },
         "SSLoad + Cobalt Strike": {
-          "detected": 1,
+          "detected": 5,
           "flows": 12,
-          "recall": 0.08333333333333333
+          "recall": 0.4166666666666667
         },
         "Emotet": {
           "detected": 1,
@@ -254,9 +254,9 @@
       ],
       "benign_fpr_by_source": {
         "mta_background": {
-          "false_alerts": 22,
+          "false_alerts": 19,
           "flows": 1929,
-          "fpr": 0.011404872991187144
+          "fpr": 0.009849663037843442
         },
         "ndpi": {
           "false_alerts": 2,
@@ -272,48 +272,48 @@
       "recall_at_fpr": [
         {
           "fpr_target": 0.001,
-          "threshold": 0.9799320910342024,
-          "recall": 0.0936986301369863
+          "threshold": 0.9805080015491608,
+          "recall": 0.11178082191780822
         },
         {
           "fpr_target": 0.005,
-          "threshold": 0.5459583472615439,
-          "recall": 0.3117808219178082
+          "threshold": 0.49873856238918624,
+          "recall": 0.3189041095890411
         },
         {
           "fpr_target": 0.01,
-          "threshold": 0.3759146592307521,
-          "recall": 0.423013698630137
+          "threshold": 0.33037503353547415,
+          "recall": 0.45315068493150684
         },
         {
           "fpr_target": 0.02,
-          "threshold": 0.194643348948416,
-          "recall": 0.7243835616438357
+          "threshold": 0.1839326591083419,
+          "recall": 0.7013698630136986
         },
         {
           "fpr_target": 0.05,
-          "threshold": 0.0342907198954708,
-          "recall": 0.9287671232876712
+          "threshold": 0.02955306932769653,
+          "recall": 0.9331506849315069
         }
       ]
     },
     "lgbm_calibrated": {
       "metrics": {
-        "tp": 800,
-        "fp": 127,
-        "fn": 1025,
-        "tn": 7645,
-        "precision": 0.8629989212513485,
-        "recall": 0.4383561643835616,
-        "fpr": 0.01634071024189398,
-        "roc_auc": 0.9787546443502845,
-        "pr_auc": 0.892776167036189
+        "tp": 807,
+        "fp": 56,
+        "fn": 1018,
+        "tn": 7716,
+        "precision": 0.9351100811123986,
+        "recall": 0.4421917808219178,
+        "fpr": 0.007205352547606794,
+        "roc_auc": 0.9790611890946778,
+        "pr_auc": 0.8978734601354067
       },
       "family_recall": {
         "Gozi/ISFB + Cobalt Strike": {
-          "detected": 276,
+          "detected": 274,
           "flows": 903,
-          "recall": 0.30564784053156147
+          "recall": 0.3034330011074197
         },
         "Pikabot + Cobalt Strike": {
           "detected": 250,
@@ -321,14 +321,14 @@
           "recall": 0.5376344086021505
         },
         "Latrodectus + BackConnect + Keyhole VNC": {
-          "detected": 134,
+          "detected": 125,
           "flows": 165,
-          "recall": 0.8121212121212121
+          "recall": 0.7575757575757576
         },
         "Qakbot + Cobalt Strike + VNC": {
-          "detected": 86,
+          "detected": 87,
           "flows": 91,
-          "recall": 0.945054945054945
+          "recall": 0.9560439560439561
         },
         "DarkGate": {
           "detected": 3,
@@ -336,14 +336,14 @@
           "recall": 0.04411764705882353
         },
         "KoiLoader/KoiStealer": {
-          "detected": 12,
+          "detected": 23,
           "flows": 30,
-          "recall": 0.4
+          "recall": 0.7666666666666667
         },
         "Lumma Stealer": {
-          "detected": 12,
+          "detected": 11,
           "flows": 29,
-          "recall": 0.41379310344827586
+          "recall": 0.3793103448275862
         },
         "IcedID": {
           "detected": 14,
@@ -356,14 +356,14 @@
           "recall": 0.08333333333333333
         },
         "SSLoad + Cobalt Strike": {
-          "detected": 7,
+          "detected": 12,
           "flows": 12,
-          "recall": 0.5833333333333334
+          "recall": 1.0
         },
         "Emotet": {
-          "detected": 2,
+          "detected": 3,
           "flows": 7,
-          "recall": 0.2857142857142857
+          "recall": 0.42857142857142855
         },
         "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)": {
           "detected": 0,
@@ -376,9 +376,9 @@
           "recall": 0.0
         },
         "AsyncRAT": {
-          "detected": 2,
+          "detected": 3,
           "flows": 3,
-          "recall": 0.6666666666666666
+          "recall": 1.0
         },
         "Remcos RAT": {
           "detected": 0,
@@ -456,14 +456,14 @@
       ],
       "benign_fpr_by_source": {
         "mta_background": {
-          "false_alerts": 37,
+          "false_alerts": 35,
           "flows": 1929,
-          "fpr": 0.01918092275790565
+          "fpr": 0.018144116122343183
         },
         "ndpi": {
-          "false_alerts": 90,
+          "false_alerts": 21,
           "flows": 5839,
-          "fpr": 0.015413598218873096
+          "fpr": 0.0035965062510703886
         },
         "repo": {
           "false_alerts": 0,
@@ -474,26 +474,26 @@
     },
     "iforest": {
       "metrics": {
-        "tp": 5,
-        "fp": 122,
-        "fn": 1820,
-        "tn": 7650,
-        "precision": 0.03937007874015748,
-        "recall": 0.0027397260273972603,
-        "fpr": 0.015697375193000514,
-        "roc_auc": 0.8457790523057832,
-        "pr_auc": 0.4230439259186346
+        "tp": 13,
+        "fp": 118,
+        "fn": 1812,
+        "tn": 7654,
+        "precision": 0.09923664122137404,
+        "recall": 0.007123287671232876,
+        "fpr": 0.015182707153885743,
+        "roc_auc": 0.8339999576985172,
+        "pr_auc": 0.403724358595416
       },
       "family_recall": {
         "Gozi/ISFB + Cobalt Strike": {
-          "detected": 0,
+          "detected": 2,
           "flows": 903,
-          "recall": 0.0
+          "recall": 0.0022148394241417496
         },
         "Pikabot + Cobalt Strike": {
-          "detected": 0,
+          "detected": 2,
           "flows": 465,
-          "recall": 0.0
+          "recall": 0.004301075268817204
         },
         "Latrodectus + BackConnect + Keyhole VNC": {
           "detected": 0,
@@ -501,9 +501,9 @@
           "recall": 0.0
         },
         "Qakbot + Cobalt Strike + VNC": {
-          "detected": 3,
+          "detected": 8,
           "flows": 91,
-          "recall": 0.03296703296703297
+          "recall": 0.08791208791208792
         },
         "DarkGate": {
           "detected": 0,
@@ -566,9 +566,9 @@
           "recall": 0.0
         },
         "chisel tunnel": {
-          "detected": 1,
+          "detected": 0,
           "flows": 2,
-          "recall": 0.5
+          "recall": 0.0
         },
         "Redline Stealer": {
           "detected": 1,
@@ -612,10 +612,8 @@
         }
       },
       "captures_with_malicious_flows": 28,
-      "captures_detected": 3,
+      "captures_detected": 4,
       "captures_missed": [
-        "mta:2023-07-12",
-        "mta:2023-10-03",
         "mta:2023-10-31",
         "mta:2023-12-18",
         "mta:2024-01-09",
@@ -638,18 +636,19 @@
         "ndpi:emotet",
         "ndpi:icmp-tunnel",
         "ndpi:malware",
-        "ndpi:trickbot"
+        "ndpi:trickbot",
+        "ndpi:websocket-chisel-ssh"
       ],
       "benign_fpr_by_source": {
         "mta_background": {
-          "false_alerts": 1,
+          "false_alerts": 2,
           "flows": 1929,
-          "fpr": 0.0005184033177812338
+          "fpr": 0.0010368066355624676
         },
         "ndpi": {
-          "false_alerts": 121,
+          "false_alerts": 116,
           "flows": 5839,
-          "fpr": 0.020722726494262718
+          "fpr": 0.0198664154821031
         },
         "repo": {
           "false_alerts": 0,
@@ -660,21 +659,21 @@
     },
     "max(lgbm_cal, iforest)": {
       "metrics": {
-        "tp": 802,
-        "fp": 248,
-        "fn": 1023,
-        "tn": 7524,
-        "precision": 0.7638095238095238,
-        "recall": 0.43945205479452054,
-        "fpr": 0.0319094184251158,
-        "roc_auc": 0.9243763351405467,
-        "pr_auc": 0.6637907057578271
+        "tp": 808,
+        "fp": 172,
+        "fn": 1017,
+        "tn": 7600,
+        "precision": 0.8244897959183674,
+        "recall": 0.44273972602739725,
+        "fpr": 0.02213072568193515,
+        "roc_auc": 0.9230050268261902,
+        "pr_auc": 0.6611437350782069
       },
       "family_recall": {
         "Gozi/ISFB + Cobalt Strike": {
-          "detected": 276,
+          "detected": 274,
           "flows": 903,
-          "recall": 0.30564784053156147
+          "recall": 0.3034330011074197
         },
         "Pikabot + Cobalt Strike": {
           "detected": 250,
@@ -682,14 +681,14 @@
           "recall": 0.5376344086021505
         },
         "Latrodectus + BackConnect + Keyhole VNC": {
-          "detected": 134,
+          "detected": 125,
           "flows": 165,
-          "recall": 0.8121212121212121
+          "recall": 0.7575757575757576
         },
         "Qakbot + Cobalt Strike + VNC": {
-          "detected": 86,
+          "detected": 87,
           "flows": 91,
-          "recall": 0.945054945054945
+          "recall": 0.9560439560439561
         },
         "DarkGate": {
           "detected": 3,
@@ -697,14 +696,14 @@
           "recall": 0.04411764705882353
         },
         "KoiLoader/KoiStealer": {
-          "detected": 12,
+          "detected": 23,
           "flows": 30,
-          "recall": 0.4
+          "recall": 0.7666666666666667
         },
         "Lumma Stealer": {
-          "detected": 12,
+          "detected": 11,
           "flows": 29,
-          "recall": 0.41379310344827586
+          "recall": 0.3793103448275862
         },
         "IcedID": {
           "detected": 14,
@@ -717,14 +716,14 @@
           "recall": 0.08333333333333333
         },
         "SSLoad + Cobalt Strike": {
-          "detected": 7,
+          "detected": 12,
           "flows": 12,
-          "recall": 0.5833333333333334
+          "recall": 1.0
         },
         "Emotet": {
-          "detected": 2,
+          "detected": 3,
           "flows": 7,
-          "recall": 0.2857142857142857
+          "recall": 0.42857142857142855
         },
         "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)": {
           "detected": 0,
@@ -737,9 +736,9 @@
           "recall": 0.0
         },
         "AsyncRAT": {
-          "detected": 2,
+          "detected": 3,
           "flows": 3,
-          "recall": 0.6666666666666666
+          "recall": 1.0
         },
         "Remcos RAT": {
           "detected": 0,
@@ -752,9 +751,9 @@
           "recall": 0.0
         },
         "chisel tunnel": {
-          "detected": 1,
+          "detected": 0,
           "flows": 2,
-          "recall": 0.5
+          "recall": 0.0
         },
         "Redline Stealer": {
           "detected": 1,
@@ -798,7 +797,7 @@
         }
       },
       "captures_with_malicious_flows": 28,
-      "captures_detected": 16,
+      "captures_detected": 15,
       "captures_missed": [
         "mta:2024-12-17",
         "mta:2025-01-31",
@@ -811,18 +810,19 @@
         "ndpi:dns_exfiltration",
         "ndpi:icmp-tunnel",
         "ndpi:malware",
-        "ndpi:trickbot"
+        "ndpi:trickbot",
+        "ndpi:websocket-chisel-ssh"
       ],
       "benign_fpr_by_source": {
         "mta_background": {
-          "false_alerts": 37,
+          "false_alerts": 35,
           "flows": 1929,
-          "fpr": 0.01918092275790565
+          "fpr": 0.018144116122343183
         },
         "ndpi": {
-          "false_alerts": 211,
+          "false_alerts": 137,
           "flows": 5839,
-          "fpr": 0.03613632471313581
+          "fpr": 0.02346292173317349
         },
         "repo": {
           "false_alerts": 0,
@@ -1195,121 +1195,121 @@
     ],
     "lgbm_calibrated": {
       "recall": {
-        "mean": 0.452054794520548,
-        "std": 0.04174752771790599,
-        "min": 0.38904109589041097,
-        "max": 0.5117808219178083,
+        "mean": 0.4488767123287671,
+        "std": 0.020303273901800777,
+        "min": 0.4191780821917808,
+        "max": 0.48164383561643836,
         "values": [
-          0.4383561643835616,
-          0.5117808219178083,
-          0.4810958904109589,
-          0.38904109589041097,
-          0.44
+          0.4421917808219178,
+          0.4558904109589041,
+          0.48164383561643836,
+          0.4454794520547945,
+          0.4191780821917808
         ]
       },
       "precision": {
-        "mean": 0.9069555647984782,
-        "std": 0.03056238898023472,
-        "min": 0.8629989212513485,
-        "max": 0.9340425531914893,
+        "mean": 0.9215473567304237,
+        "std": 0.014542532325365991,
+        "min": 0.897887323943662,
+        "max": 0.9351100811123986,
         "values": [
-          0.8629989212513485,
-          0.8769953051643192,
-          0.9340425531914893,
-          0.9281045751633987,
-          0.9326364692218351
+          0.9351100811123986,
+          0.9348314606741573,
+          0.9118257261410788,
+          0.928082191780822,
+          0.897887323943662
         ]
       },
       "fpr": {
-        "mean": 0.01114256304683479,
-        "std": 0.004466506183973266,
-        "min": 0.007076685537828101,
-        "max": 0.016855378281008748,
+        "mean": 0.008980957282552753,
+        "std": 0.0017289322730047168,
+        "min": 0.007205352547606794,
+        "max": 0.011194029850746268,
         "values": [
-          0.01634071024189398,
-          0.016855378281008748,
-          0.00797735460627895,
-          0.007076685537828101,
-          0.007462686567164179
+          0.007205352547606794,
+          0.007462686567164179,
+          0.010936695831188883,
+          0.008106021616057642,
+          0.011194029850746268
         ]
       },
       "roc_auc": {
-        "mean": 0.9802784847608909,
-        "std": 0.0012675151714978009,
-        "min": 0.9787546443502845,
-        "max": 0.9821451786885131,
+        "mean": 0.9795539731667595,
+        "std": 0.0006519534410664096,
+        "min": 0.9787059976452175,
+        "max": 0.9804235083439675,
         "values": [
-          0.9787546443502845,
-          0.9803795148019938,
-          0.9810855265477055,
-          0.9790275594159576,
-          0.9821451786885131
+          0.9790611890946778,
+          0.9787059976452175,
+          0.9804235083439675,
+          0.9801744231135303,
+          0.9794047476364047
         ]
       },
       "pr_auc": {
-        "mean": 0.9047202020286507,
-        "std": 0.007231121985806966,
-        "min": 0.892776167036189,
-        "max": 0.9135685678104225,
+        "mean": 0.9013827385893023,
+        "std": 0.006721304058337229,
+        "min": 0.8917332076103781,
+        "max": 0.9100921963381418,
         "values": [
-          0.892776167036189,
-          0.9094185017191856,
-          0.9135685678104225,
-          0.9009919562506574,
-          0.9068458173267985
+          0.8978734601354067,
+          0.899442193047007,
+          0.9100921963381418,
+          0.9077726358155781,
+          0.8917332076103781
         ]
       }
     }
   },
   "alert_rules": {
     "any_risk OR ml (Phase 2 spec)": {
-      "tp": 1696,
-      "fp": 3829,
-      "fn": 129,
-      "tn": 3943,
-      "precision": 0.3069683257918552,
-      "recall": 0.9293150684931507,
-      "fpr": 0.4926659804426145,
-      "roc_auc": 0.718324544025268,
-      "pr_auc": 0.2987119912399018,
+      "tp": 1695,
+      "fp": 3826,
+      "fn": 130,
+      "tn": 3946,
+      "precision": 0.3070095997101974,
+      "recall": 0.9287671232876712,
+      "fpr": 0.49227997941327845,
+      "roc_auc": 0.7182435719371965,
+      "pr_auc": 0.29868632250488125,
       "fpr_mta_background": 0.17988595127008813
     },
     "severe_risk OR ml": {
-      "tp": 867,
-      "fp": 181,
-      "fn": 958,
-      "tn": 7591,
-      "precision": 0.8272900763358778,
-      "recall": 0.47506849315068495,
-      "fpr": 0.023288728769943385,
-      "roc_auc": 0.7258898821903708,
-      "pr_auc": 0.4928423112742269,
-      "fpr_mta_background": 0.0352514256091239
+      "tp": 873,
+      "fp": 102,
+      "fn": 952,
+      "tn": 7670,
+      "precision": 0.8953846153846153,
+      "recall": 0.47835616438356166,
+      "fpr": 0.01312403499742666,
+      "roc_auc": 0.7326160646930675,
+      "pr_auc": 0.5275104162007073,
+      "fpr_mta_background": 0.03421461897356143
     },
     "ml only": {
-      "tp": 800,
-      "fp": 127,
-      "fn": 1025,
-      "tn": 7645,
-      "precision": 0.8629989212513485,
-      "recall": 0.4383561643835616,
-      "fpr": 0.01634071024189398,
-      "roc_auc": 0.7110077270708338,
-      "pr_auc": 0.4851051066357411,
-      "fpr_mta_background": 0.01918092275790565
+      "tp": 807,
+      "fp": 56,
+      "fn": 1018,
+      "tn": 7716,
+      "precision": 0.9351100811123986,
+      "recall": 0.4421917808219178,
+      "fpr": 0.007205352547606794,
+      "roc_auc": 0.7174932141371555,
+      "pr_auc": 0.5195728070779881,
+      "fpr_mta_background": 0.018144116122343183
     }
   },
   "lgbm_calibration": {
-    "raw_threshold": 0.3297864007152475,
+    "raw_threshold": 0.3530670894980808,
     "maps_to": 0.8,
     "fpr_budget": 0.01,
     "fit_on": "median over 5 CV seeds of the 1%-OOF-FPR threshold",
     "per_seed_raw_thresholds": [
-      0.3759146602297522,
-      0.4510116330359985,
-      0.3297864007152475,
-      0.26747091178904486,
-      0.3188242439474946
+      0.3303750345344742,
+      0.3530670894980808,
+      0.38293815091655514,
+      0.314248421920324,
+      0.37876796215684755
     ]
   }
 }

@@ -1,25 +1,25 @@
 {
-  "model_version": "lgbm+iforest-fv1-6e986f14",
+  "model_version": "lgbm+iforest-fv1-2005d025",
   "risk_policy": "any",
   "summary": {
     "ml (ml_anomaly_score >= 0.80)": {
-      "tp": 712,
+      "tp": 705,
       "fp": 3,
       "malicious": 3084,
       "benign": 498,
-      "recall": 0.23086900129701687,
+      "recall": 0.22859922178988326,
       "fpr": 0.006024096385542169,
-      "precision": 0.9958041958041958,
+      "precision": 0.9957627118644068,
       "captures_detected": 5
     },
     "severe_risk OR ml": {
-      "tp": 713,
+      "tp": 706,
       "fp": 9,
       "malicious": 3084,
       "benign": 498,
-      "recall": 0.23119325551232167,
+      "recall": 0.22892347600518806,
       "fpr": 0.018072289156626505,
-      "precision": 0.9875346260387812,
+      "precision": 0.9874125874125874,
       "captures_detected": 5
     },
     "any_risk OR ml (Phase 2 rule)": {
@@ -55,13 +55,13 @@
       "sensor_exit": 0,
       "sensor_exported": 2327,
       "daemon_stored": 2327,
-      "scorer": "lgbm+iforest-fv1-6e986f14",
+      "scorer": "lgbm+iforest-fv1-2005d025",
       "labels": {
         "benign": 100,
         "malicious": 2227
       },
       "malicious_flows": 2227,
-      "ml_detected": 76,
+      "ml_detected": 67,
       "ml_false_alerts": 1,
       "is_alert_detected": 2223,
       "is_alert_false_alerts": 30,
@@ -71,39 +71,39 @@
         {
           "dst": "170.130.55.46:80",
           "app": "HTTP",
-          "score": 0.996812,
-          "p": 0.989318
+          "score": 0.996839,
+          "p": 0.989776
+        },
+        {
+          "dst": "170.130.165.37:80",
+          "app": "HTTP",
+          "score": 0.980354,
+          "p": 0.93645
         },
         {
           "dst": "170.130.55.117:8080",
           "app": "TLS",
-          "score": 0.983635,
-          "p": 0.945159
-        },
-        {
-          "dst": "170.130.55.117:8080",
-          "app": "TLS",
-          "score": 0.983518,
-          "p": 0.944766
-        },
-        {
-          "dst": "170.130.55.117:8080",
-          "app": "TLS",
-          "score": 0.983518,
-          "p": 0.944766
+          "score": 0.974686,
+          "p": 0.918117
         },
         {
           "dst": "170.130.55.150:80",
           "app": "HTTP",
-          "score": 0.97772,
-          "p": 0.925337
+          "score": 0.974522,
+          "p": 0.917588
+        },
+        {
+          "dst": "170.130.55.117:8080",
+          "app": "TLS",
+          "score": 0.967125,
+          "p": 0.893662
         }
       ],
       "malicious_endpoints": {
         "170.130.55.150": {
           "flows": 2212,
-          "alerted": 65,
-          "max_score": 0.97772,
+          "alerted": 56,
+          "max_score": 0.974522,
           "services": [
             "80/HTTP"
           ]
@@ -111,7 +111,7 @@
         "170.130.55.117": {
           "flows": 8,
           "alerted": 8,
-          "max_score": 0.983635,
+          "max_score": 0.974686,
           "services": [
             "443/TLS",
             "8080/TLS"
@@ -120,7 +120,7 @@
         "201.148.107.213": {
           "flows": 2,
           "alerted": 0,
-          "max_score": 0.0117,
+          "max_score": 0.007317,
           "services": [
             "443/TLS"
           ]
@@ -128,7 +128,7 @@
         "193.3.19.230": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.859397,
+          "max_score": 0.861766,
           "services": [
             "80/HTTP"
           ]
@@ -136,7 +136,7 @@
         "65.108.196.140": {
           "flows": 1,
           "alerted": 0,
-          "max_score": 0.013819,
+          "max_score": 0.00994,
           "services": [
             "443/TLS"
           ]
@@ -144,7 +144,7 @@
         "170.130.165.37": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.976918,
+          "max_score": 0.980354,
           "services": [
             "80/HTTP"
           ]
@@ -152,7 +152,7 @@
         "170.130.165.107": {
           "flows": 1,
           "alerted": 0,
-          "max_score": 0.018291,
+          "max_score": 0.018191,
           "services": [
             "1444/Unknown"
           ]
@@ -160,7 +160,7 @@
         "170.130.55.46": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.996812,
+          "max_score": 0.996839,
           "services": [
             "80/HTTP"
           ]
@@ -175,14 +175,14 @@
       "sensor_exit": 0,
       "sensor_exported": 740,
       "daemon_stored": 740,
-      "scorer": "lgbm+iforest-fv1-6e986f14",
+      "scorer": "lgbm+iforest-fv1-2005d025",
       "labels": {
         "benign": 50,
         "ambiguous": 3,
         "malicious": 687
       },
       "malicious_flows": 687,
-      "ml_detected": 612,
+      "ml_detected": 614,
       "ml_false_alerts": 0,
       "is_alert_detected": 687,
       "is_alert_false_alerts": 10,
@@ -192,39 +192,39 @@
         {
           "dst": "45.154.98.21:80",
           "app": "HTTP",
-          "score": 0.997782,
-          "p": 0.992568
+          "score": 0.997078,
+          "p": 0.99055
         },
         {
           "dst": "45.154.98.21:80",
           "app": "HTTP",
-          "score": 0.99338,
-          "p": 0.977817
+          "score": 0.993003,
+          "p": 0.977369
         },
         {
           "dst": "45.154.98.21:80",
           "app": "HTTP",
-          "score": 0.99122,
-          "p": 0.970576
+          "score": 0.988199,
+          "p": 0.961828
         },
         {
           "dst": "188.246.224.221:2351",
           "app": "HTTP",
-          "score": 0.971023,
-          "p": 0.902898
+          "score": 0.979885,
+          "p": 0.934936
         },
         {
           "dst": "188.246.224.221:2351",
           "app": "HTTP",
-          "score": 0.971023,
-          "p": 0.902898
+          "score": 0.978467,
+          "p": 0.930347
         }
       ],
       "malicious_endpoints": {
         "188.246.224.221": {
           "flows": 684,
-          "alerted": 609,
-          "max_score": 0.971023,
+          "alerted": 611,
+          "max_score": 0.979885,
           "services": [
             "2351/HTTP",
             "8080/HTTP_Proxy"
@@ -233,7 +233,7 @@
         "45.154.98.21": {
           "flows": 3,
           "alerted": 3,
-          "max_score": 0.997782,
+          "max_score": 0.997078,
           "services": [
             "80/HTTP"
           ]
@@ -248,14 +248,14 @@
       "sensor_exit": 0,
       "sensor_exported": 28,
       "daemon_stored": 28,
-      "scorer": "lgbm+iforest-fv1-6e986f14",
+      "scorer": "lgbm+iforest-fv1-2005d025",
       "labels": {
         "benign": 12,
         "ambiguous": 5,
         "malicious": 11
       },
       "malicious_flows": 11,
-      "ml_detected": 5,
+      "ml_detected": 6,
       "ml_false_alerts": 0,
       "is_alert_detected": 9,
       "is_alert_false_alerts": 4,
@@ -265,39 +265,39 @@
         {
           "dst": "45.59.170.106:443",
           "app": "TLS",
-          "score": 0.998039,
-          "p": 0.993428
+          "score": 0.997992,
+          "p": 0.993503
         },
         {
           "dst": "5.161.113.150:25658",
           "app": "TLS",
-          "score": 0.970315,
-          "p": 0.900524
+          "score": 0.983573,
+          "p": 0.946863
         },
         {
           "dst": "5.161.113.150:25658",
           "app": "TLS",
-          "score": 0.955017,
-          "p": 0.849258
+          "score": 0.966856,
+          "p": 0.892789
         },
         {
           "dst": "167.71.107.109:80",
           "app": "HTTP",
-          "score": 0.951458,
-          "p": 0.837331
+          "score": 0.955517,
+          "p": 0.856113
         },
         {
           "dst": "5.161.113.150:25658",
           "app": "TLS",
-          "score": 0.870005,
-          "p": 0.564376
+          "score": 0.89334,
+          "p": 0.65499
         }
       ],
       "malicious_endpoints": {
         "5.161.113.150": {
           "flows": 6,
-          "alerted": 3,
-          "max_score": 0.970315,
+          "alerted": 4,
+          "max_score": 0.983573,
           "services": [
             "25658/TLS"
           ]
@@ -305,7 +305,7 @@
         "66.135.17.87": {
           "flows": 2,
           "alerted": 0,
-          "max_score": 0.071177,
+          "max_score": 0.047911,
           "services": [
             "443/TLS"
           ]
@@ -313,7 +313,7 @@
         "45.59.170.106": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.998039,
+          "max_score": 0.997992,
           "services": [
             "443/TLS"
           ]
@@ -321,7 +321,7 @@
         "49.13.65.235": {
           "flows": 1,
           "alerted": 0,
-          "max_score": 0.747115,
+          "max_score": 0.380884,
           "services": [
             "80/HTTP"
           ]
@@ -329,7 +329,7 @@
         "167.71.107.109": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.951458,
+          "max_score": 0.955517,
           "services": [
             "80/HTTP"
           ]
@@ -344,13 +344,13 @@
       "sensor_exit": 0,
       "sensor_exported": 152,
       "daemon_stored": 152,
-      "scorer": "lgbm+iforest-fv1-6e986f14",
+      "scorer": "lgbm+iforest-fv1-2005d025",
       "labels": {
         "benign": 4,
         "malicious": 148
       },
       "malicious_flows": 148,
-      "ml_detected": 15,
+      "ml_detected": 14,
       "ml_false_alerts": 0,
       "is_alert_detected": 48,
       "is_alert_false_alerts": 3,
@@ -360,39 +360,39 @@
         {
           "dst": "185.95.159.55:443",
           "app": "TLS",
-          "score": 0.99387,
-          "p": 0.979458
+          "score": 0.994155,
+          "p": 0.981093
         },
         {
           "dst": "185.95.159.55:443",
           "app": "TLS",
-          "score": 0.993116,
-          "p": 0.97693
+          "score": 0.993078,
+          "p": 0.977611
         },
         {
           "dst": "185.95.159.55:443",
           "app": "TLS",
-          "score": 0.992876,
-          "p": 0.976126
+          "score": 0.992554,
+          "p": 0.975915
         },
         {
           "dst": "185.95.159.55:443",
           "app": "TLS",
-          "score": 0.991889,
-          "p": 0.97282
+          "score": 0.99242,
+          "p": 0.975481
         },
         {
           "dst": "185.95.159.55:443",
           "app": "TLS",
-          "score": 0.989947,
-          "p": 0.966312
+          "score": 0.990642,
+          "p": 0.969731
         }
       ],
       "malicious_endpoints": {
         "5.10.250.239": {
           "flows": 136,
-          "alerted": 4,
-          "max_score": 0.961419,
+          "alerted": 3,
+          "max_score": 0.951506,
           "services": [
             "443/TLS",
             "9000/HTTP"
@@ -401,7 +401,7 @@
         "185.95.159.55": {
           "flows": 10,
           "alerted": 10,
-          "max_score": 0.99387,
+          "max_score": 0.994155,
           "services": [
             "443/TLS"
           ]
@@ -409,7 +409,7 @@
         "104.21.24.30": {
           "flows": 2,
           "alerted": 1,
-          "max_score": 0.940832,
+          "max_score": 0.914939,
           "services": [
             "443/TLS"
           ]
@@ -424,7 +424,7 @@
       "sensor_exit": 0,
       "sensor_exported": 345,
       "daemon_stored": 345,
-      "scorer": "lgbm+iforest-fv1-6e986f14",
+      "scorer": "lgbm+iforest-fv1-2005d025",
       "labels": {
         "benign": 332,
         "ambiguous": 2,
@@ -441,39 +441,39 @@
         {
           "dst": "80.253.249.145:80",
           "app": "HTTP",
-          "score": 0.997587,
-          "p": 0.991913
+          "score": 0.995177,
+          "p": 0.9844
         },
         {
           "dst": "185.39.19.96:443",
           "app": "HTTP",
-          "score": 0.985197,
-          "p": 0.950393
+          "score": 0.986505,
+          "p": 0.95635
         },
         {
           "dst": "185.39.19.96:443",
           "app": "HTTP",
-          "score": 0.974851,
-          "p": 0.915726
+          "score": 0.975108,
+          "p": 0.919483
         },
         {
           "dst": "80.253.249.145:80",
           "app": "HTTP",
-          "score": 0.859368,
-          "p": 0.528732
+          "score": 0.897701,
+          "p": 0.669098
         },
         {
           "dst": "45.93.20.50:443",
           "app": "TLS",
-          "score": 0.402828,
-          "p": 0.166059
+          "score": 0.233044,
+          "p": 0.10285
         }
       ],
       "malicious_endpoints": {
         "45.93.20.50": {
           "flows": 4,
           "alerted": 0,
-          "max_score": 0.402828,
+          "max_score": 0.233044,
           "services": [
             "443/TLS"
           ]
@@ -481,7 +481,7 @@
         "65.181.111.158": {
           "flows": 2,
           "alerted": 0,
-          "max_score": 0.036986,
+          "max_score": 0.061304,
           "services": [
             "443/TLS"
           ]
@@ -489,7 +489,7 @@
         "80.253.249.145": {
           "flows": 2,
           "alerted": 2,
-          "max_score": 0.997587,
+          "max_score": 0.995177,
           "services": [
             "80/HTTP"
           ]
@@ -497,7 +497,7 @@
         "185.39.19.96": {
           "flows": 2,
           "alerted": 2,
-          "max_score": 0.985197,
+          "max_score": 0.986505,
           "services": [
             "443/HTTP"
           ]
@@ -505,7 +505,7 @@
         "104.21.96.46": {
           "flows": 1,
           "alerted": 0,
-          "max_score": 0.126919,
+          "max_score": 0.186662,
           "services": [
             "443/HTTP"
           ]
