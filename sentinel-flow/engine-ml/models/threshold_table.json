@@ -1,0 +1,102 @@
+{
+  "holdout": {
+    "0.70/none": {
+      "malicious_endpoints": 23,
+      "caught": 16,
+      "benign_endpoints": 61,
+      "false_blocks": 2,
+      "infections_with_a_block": 5,
+      "infections": 5
+    },
+    "0.70/severe": {
+      "malicious_endpoints": 23,
+      "caught": 16,
+      "benign_endpoints": 61,
+      "false_blocks": 2,
+      "infections_with_a_block": 5,
+      "infections": 5
+    },
+    "0.80/none": {
+      "malicious_endpoints": 23,
+      "caught": 15,
+      "benign_endpoints": 61,
+      "false_blocks": 2,
+      "infections_with_a_block": 5,
+      "infections": 5
+    },
+    "0.80/severe": {
+      "malicious_endpoints": 23,
+      "caught": 16,
+      "benign_endpoints": 61,
+      "false_blocks": 2,
+      "infections_with_a_block": 5,
+      "infections": 5
+    },
+    "0.90/none": {
+      "malicious_endpoints": 23,
+      "caught": 14,
+      "benign_endpoints": 61,
+      "false_blocks": 2,
+      "infections_with_a_block": 5,
+      "infections": 5
+    },
+    "0.90/severe": {
+      "malicious_endpoints": 23,
+      "caught": 15,
+      "benign_endpoints": 61,
+      "false_blocks": 2,
+      "infections_with_a_block": 5,
+      "infections": 5
+    }
+  },
+  "cv_seed42": {
+    "0.70/none": {
+      "malicious_endpoints": 91,
+      "caught": 65,
+      "benign_endpoints": 2459,
+      "false_blocks": 113,
+      "infections_with_a_block": 14,
+      "infections": 23
+    },
+    "0.70/severe": {
+      "malicious_endpoints": 91,
+      "caught": 67,
+      "benign_endpoints": 2459,
+      "false_blocks": 123,
+      "infections_with_a_block": 16,
+      "infections": 23
+    },
+    "0.80/none": {
+      "malicious_endpoints": 91,
+      "caught": 63,
+      "benign_endpoints": 2459,
+      "false_blocks": 51,
+      "infections_with_a_block": 14,
+      "infections": 23
+    },
+    "0.80/severe": {
+      "malicious_endpoints": 91,
+      "caught": 65,
+      "benign_endpoints": 2459,
+      "false_blocks": 61,
+      "infections_with_a_block": 16,
+      "infections": 23
+    },
+    "0.90/none": {
+      "malicious_endpoints": 91,
+      "caught": 60,
+      "benign_endpoints": 2459,
+      "false_blocks": 21,
+      "infections_with_a_block": 13,
+      "infections": 23
+    },
+    "0.90/severe": {
+      "malicious_endpoints": 91,
+      "caught": 62,
+      "benign_endpoints": 2459,
+      "false_blocks": 35,
+      "infections_with_a_block": 15,
+      "infections": 23
+    }
+  }
+}

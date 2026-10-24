@@ -47,9 +47,12 @@ char *ndpi_wrapper_protocol_name(ndpi_protocol proto, char *buf, size_t buflen);
 
 /*
  * Retrieve the JA4 client fingerprint from a completed flow.
- * Returns a pointer to an internal static/flow buffer, or "N/A".
+ * Returns a pointer into the flow, or "N/A" when the flow was not
+ * classified as a TLS-family protocol or the stored value is not a
+ * well-formed JA4 string.
  */
-const char *ndpi_wrapper_get_ja4(const struct ndpi_flow_struct *flow);
+const char *ndpi_wrapper_get_ja4(const struct ndpi_flow_struct *flow,
+                                 ndpi_protocol proto);
 
 /*
  * Retrieve the risk bitmask from a completed flow.

@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <time.h>
+#include <sys/time.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -51,8 +52,11 @@
 #define DEFAULT_ZMQ_ENDPOINT  "ipc:///tmp/ndpi_flows.sock"
 #define FLOW_EXPIRE_SEC       30
 #define NDPI_MAX_PACKETS      15
-#define EXPIRE_CHECK_INTERVAL 1000
+#define EXPIRE_CHECK_INTERVAL 1000    /* housekeeping every N packets ... */
+#define HOUSEKEEPING_US       1000000 /* ... or every 1 s of capture time */
+#define FLOW_ACTIVE_TIMEOUT_SEC 60    /* default for -A; 0 disables       */
 #define SNAP_LEN              65535
+#define ZMQ_DRAIN_MS          60000   /* max wait at exit for a slow consumer */
 
 /* ── Global State ────────────────────────────────────────────────── */
 
@@ -60,7 +64,15 @@ static flow_entry_t *flow_table    = NULL;
 static volatile sig_atomic_t running = 1;
 static uint64_t total_packets      = 0;
 static uint64_t total_flows        = 0;
-static uint64_t exported_flows     = 0;
+static uint64_t exported_flows     = 0;   /* delivered to the ZMQ queue */
+static uint64_t dropped_flows      = 0;   /* ZMQ send failed */
+static uint64_t snapshot_records   = 0;   /* active-timeout records sent */
+static uint64_t active_timeout_us  = (uint64_t)FLOW_ACTIVE_TIMEOUT_SEC * 1000000ULL;
+static uint64_t last_housekeeping_us = 0;
+static bool     live_capture       = false;
+/* How long one flow may wait for a full ZMQ queue: offline replay has no
+ * deadline so it waits (no data loss); live capture must not stall. */
+static int      send_patience_ms   = 200;
 static bool     verbose            = false;   /* -v flag */
 
 /* ── Signal Handler ──────────────────────────────────────────────── */
@@ -86,23 +98,10 @@ static void ip_to_str(uint32_t ip_net, char *buf, size_t len)
 
 /* ── Flow Export (JSON over ZMQ, optionally stdout) ──────────────── */
 
-static void export_flow(flow_entry_t *entry)
+/* Serialize the flow's current state and push it. Used both for the
+ * final record (export_flow) and for active-timeout snapshots. */
+static void emit_flow(flow_entry_t *entry)
 {
-    if (entry->exported)
-        return;
-    entry->exported = true;
-    exported_flows++;
-
-    /* ── Bug fix 3: giveup for flows that ended before detection ── */
-    if (!entry->detection_completed && entry->ndpi_flow) {
-        struct ndpi_detection_module_struct *mod = ndpi_wrapper_get_module();
-        if (mod) {
-            entry->detected_protocol =
-                ndpi_detection_giveup(mod, entry->ndpi_flow);
-            entry->detection_completed = true;
-        }
-    }
-
     /* ── Addresses: use ORIGINAL first-packet 5-tuple ───────────── */
     char src_str[INET_ADDRSTRLEN], dst_str[INET_ADDRSTRLEN];
     ip_to_str(entry->orig_src_ip, src_str, sizeof(src_str));
@@ -115,7 +114,7 @@ static void export_flow(flow_entry_t *entry)
     const char *ja4 = "N/A";
     ndpi_risk risk   = 0;
     if (entry->ndpi_flow) {
-        ja4  = ndpi_wrapper_get_ja4(entry->ndpi_flow);
+        ja4  = ndpi_wrapper_get_ja4(entry->ndpi_flow, entry->detected_protocol);
         risk = ndpi_wrapper_get_risk(entry->ndpi_flow);
         if (!ja4) ja4 = "N/A";
     }
@@ -181,7 +180,14 @@ static void export_flow(flow_entry_t *entry)
 
     char *json_str = cJSON_PrintUnformatted(root);
     if (json_str) {
-        zmq_publisher_send(json_str);
+        if (zmq_publisher_send(json_str, send_patience_ms) != 0) {
+            dropped_flows++;
+            if (dropped_flows == 1)
+                fprintf(stderr, "[sensor] WARNING: ZMQ send failed (consumer too slow "
+                        "or absent); flow dropped. Further drops are counted.\n");
+        } else {
+            exported_flows++;
+        }
         if (verbose)
             printf("%s\n", json_str);
         cJSON_free(json_str);
@@ -190,7 +196,130 @@ static void export_flow(flow_entry_t *entry)
     cJSON_Delete(root);
 }
 
+/* Final record: the flow ended (idle expiry) or the sensor is stopping. */
+static void export_flow(flow_entry_t *entry)
+{
+    if (entry->exported)
+        return;
+    entry->exported = true;
+
+    /* ── Bug fix 3: giveup for flows that ended before detection ── */
+    if (!entry->detection_completed && entry->ndpi_flow) {
+        struct ndpi_detection_module_struct *mod = ndpi_wrapper_get_module();
+        if (mod) {
+            entry->detected_protocol =
+                ndpi_detection_giveup(mod, entry->ndpi_flow);
+            entry->detection_completed = true;
+        }
+    }
+    emit_flow(entry);
+}
+
+/* Active timeout: a flow that keeps sending (never idle for 30 s) still
+ * gets a record every active_timeout_us, so it can be scored and acted
+ * on while the connection is open. The record is cumulative since
+ * first_seen_us (same 23-field schema); the flow stays in the table and
+ * its final record follows when it ends. Detection is not forced to
+ * give up here, so app_protocol reflects nDPI's state at that moment. */
+static void snapshot_if_due(flow_entry_t *entry, void *ctx)
+{
+    uint64_t now_us = *(const uint64_t *)ctx;
+    uint64_t ref = entry->last_export_us ? entry->last_export_us
+                                         : entry->first_seen_us;
+    if (entry->exported || now_us < ref || now_us - ref < active_timeout_us)
+        return;
+    /* Only flows that are still active (seen within the idle timeout). */
+    if (now_us < entry->last_seen_us ||
+        now_us - entry->last_seen_us >= (uint64_t)FLOW_EXPIRE_SEC * 1000000ULL)
+        return;
+    entry->last_export_us = now_us;
+    snapshot_records++;
+    emit_flow(entry);
+}
+
+/* At time now_us: idle expiry and/or active-timeout snapshots. */
+static void expire_idle(uint64_t now_us)
+{
+    if (now_us > (uint64_t)FLOW_EXPIRE_SEC * 1000000ULL)
+        flow_table_expire(&flow_table,
+                          now_us - (uint64_t)FLOW_EXPIRE_SEC * 1000000ULL,
+                          export_flow);
+}
+
+static void take_snapshots(uint64_t now_us)
+{
+    last_housekeeping_us = now_us;
+    if (active_timeout_us)
+        flow_table_foreach(&flow_table, snapshot_if_due, &now_us);
+}
+
 /* ── Packet Processing Callback ──────────────────────────────────── */
+
+/* ── Link-layer decoding ─────────────────────────────────────────── */
+
+static int datalink = DLT_EN10MB;   /* set from pcap_datalink() in main */
+
+static inline uint16_t rd16be(const u_char *p)
+{
+    uint16_t v;
+    memcpy(&v, p, sizeof(v));
+    return ntohs(v);
+}
+
+/*
+ * Find where the IPv4 header starts for the capture's link type.
+ * Returns 1 and sets *off for IPv4 packets, 0 for anything else.
+ * Supported: Ethernet (+ one 802.1Q tag), Linux cooked v1/v2 ("any"
+ * device), BSD loopback (DLT_NULL / DLT_LOOP), and raw IP.
+ */
+static int ipv4_offset(const u_char *pkt, unsigned int caplen, unsigned int *off)
+{
+    switch (datalink) {
+    case DLT_EN10MB: {
+        if (caplen < 14) return 0;
+        uint16_t type = rd16be(pkt + 12);
+        unsigned int o = 14;
+        if (type == 0x8100) {                       /* 802.1Q VLAN */
+            if (caplen < 18) return 0;
+            type = rd16be(pkt + 16);
+            o = 18;
+        }
+        if (type != ETHERTYPE_IP) return 0;
+        *off = o;
+        return 1;
+    }
+    case DLT_LINUX_SLL:                             /* 16-byte header */
+        if (caplen < 16 || rd16be(pkt + 14) != ETHERTYPE_IP) return 0;
+        *off = 16;
+        return 1;
+#ifdef DLT_LINUX_SLL2
+    case DLT_LINUX_SLL2:                            /* 20-byte header */
+        if (caplen < 20 || rd16be(pkt) != ETHERTYPE_IP) return 0;
+        *off = 20;
+        return 1;
+#endif
+    case DLT_NULL:
+    case DLT_LOOP: {                                /* 4-byte AF_ family */
+        if (caplen < 4) return 0;
+        uint32_t fam;
+        memcpy(&fam, pkt, sizeof(fam));
+        /* DLT_NULL is host byte order of the *capturing* machine, so
+         * accept AF_INET (2) in either byte order. */
+        if (fam != 2 && fam != 0x02000000u) return 0;
+        *off = 4;
+        return 1;
+    }
+    case DLT_RAW:
+#ifdef DLT_IPV4
+    case DLT_IPV4:
+#endif
+        if (caplen < 1 || (pkt[0] >> 4) != 4) return 0;
+        *off = 0;
+        return 1;
+    default:
+        return 0;
+    }
+}
 
 static void packet_callback(u_char *user __attribute__((unused)),
                              const struct pcap_pkthdr *hdr,
@@ -198,27 +327,37 @@ static void packet_callback(u_char *user __attribute__((unused)),
 {
     total_packets++;
 
-    /* ── Parse Ethernet → IP ─────────────────────────────────────── */
-    if (hdr->caplen < sizeof(struct ether_header))
-        return;
-
-    const struct ether_header *eth = (const struct ether_header *)pkt;
-    uint16_t ether_type = ntohs(eth->ether_type);
+    /* ── Link layer → IPv4 offset ────────────────────────────────── */
     unsigned int ip_offset;
-
-    if (ether_type == 0x8100) {   /* 802.1Q VLAN */
-        if (hdr->caplen < sizeof(struct ether_header) + 4) return;
-        ether_type = ntohs(*(uint16_t *)(pkt + sizeof(struct ether_header) + 2));
-        ip_offset  = sizeof(struct ether_header) + 4;
-    } else {
-        ip_offset  = sizeof(struct ether_header);
-    }
-
-    if (ether_type != ETHERTYPE_IP) return;
+    if (!ipv4_offset(pkt, hdr->caplen, &ip_offset))
+        return;
     if (hdr->caplen < ip_offset + sizeof(struct ip)) return;
 
-    const u_char     *ip_pkt = pkt + ip_offset;
-    const struct ip  *iph    = (const struct ip *)ip_pkt;
+    /* Active-timeout snapshots: every 1 s of packet time, checked BEFORE
+     * this packet joins its flow, so "still active" means the flow was
+     * seen within the idle timeout before this packet. Live capture also
+     * expires idle flows here (and on the wall clock in the capture
+     * loop). Time going backwards does not trigger anything. */
+    {
+        uint64_t t = timeval_to_us(&hdr->ts);
+        if (last_housekeeping_us == 0)
+            last_housekeeping_us = t;
+        if (t > last_housekeeping_us && t - last_housekeeping_us >= HOUSEKEEPING_US) {
+            if (live_capture)
+                expire_idle(t);
+            take_snapshots(t);
+        }
+    }
+
+
+    /* Headers start at offset 14 (or 18), which is not 4-byte aligned.
+     * Copy them into aligned locals instead of casting the packet
+     * pointer: a direct cast is undefined behaviour (UBSan flagged it)
+     * and faults on strict-alignment CPUs. */
+    const u_char *ip_pkt = pkt + ip_offset;
+    struct ip     ip_hdr;
+    memcpy(&ip_hdr, ip_pkt, sizeof(ip_hdr));
+    const struct ip *iph = &ip_hdr;
 
     if (iph->ip_v != 4) return;
     unsigned int ip_hdr_len = (unsigned int)iph->ip_hl * 4;
@@ -234,14 +373,18 @@ static void packet_callback(u_char *user __attribute__((unused)),
     unsigned int    l4_remaining = hdr->caplen - ip_offset - ip_hdr_len;
 
     if (iph->ip_p == IPPROTO_TCP && l4_remaining >= sizeof(struct tcphdr)) {
-        const struct tcphdr *tcph = (const struct tcphdr *)l4_pkt;
+        struct tcphdr tcp_hdr;
+        memcpy(&tcp_hdr, l4_pkt, sizeof(tcp_hdr));
+        const struct tcphdr *tcph = &tcp_hdr;
         pkt_src_port = tcph->th_sport;
         pkt_dst_port = tcph->th_dport;
         unsigned int tcp_hdr_len = (unsigned int)tcph->th_off * 4;
         if (tcp_hdr_len >= 20 && l4_remaining > tcp_hdr_len)
             payload_len = (uint16_t)(l4_remaining - tcp_hdr_len);
     } else if (iph->ip_p == IPPROTO_UDP && l4_remaining >= sizeof(struct udphdr)) {
-        const struct udphdr *udph = (const struct udphdr *)l4_pkt;
+        struct udphdr udp_hdr;
+        memcpy(&udp_hdr, l4_pkt, sizeof(udp_hdr));
+        const struct udphdr *udph = &udp_hdr;
         pkt_src_port = udph->uh_sport;
         pkt_dst_port = udph->uh_dport;
         if (l4_remaining > sizeof(struct udphdr))
@@ -298,7 +441,11 @@ static void packet_callback(u_char *user __attribute__((unused)),
         flow->ndpi_flow = ndpi_wrapper_alloc_flow();
     }
 
-    flow->last_seen_us = pkt_time_us;
+    /* Captures are not always time-ordered (8 of 577 nDPI test PCAPs
+     * have packets that go backwards). Keep first/last as min/max so
+     * last_seen_us - first_seen_us can never underflow. */
+    if (pkt_time_us > flow->last_seen_us)  flow->last_seen_us  = pkt_time_us;
+    if (pkt_time_us < flow->first_seen_us) flow->first_seen_us = pkt_time_us;
     flow->pkt_count++;
 
     /* ── Byte counters keyed on original direction ───────────────── *
@@ -321,10 +468,14 @@ static void packet_callback(u_char *user __attribute__((unused)),
     /* ── Welford: IAT (skip first packet — no previous timestamp) ── *
      * Bug fix 2 guard: pkt_count is already incremented above.       */
     if (flow->pkt_count > 1) {
-        double iat_us = (double)(pkt_time_us - flow->last_pkt_us);
+        /* A packet older than the previous one counts as IAT 0 instead
+         * of an unsigned underflow (~1.8e19 us). */
+        double iat_us = (pkt_time_us >= flow->last_pkt_us)
+                        ? (double)(pkt_time_us - flow->last_pkt_us) : 0.0;
         welford_update(&flow->iat_stats, iat_us);
     }
-    flow->last_pkt_us = pkt_time_us;
+    if (pkt_time_us > flow->last_pkt_us)
+        flow->last_pkt_us = pkt_time_us;
 
     /* ── nDPI: feed packet for protocol detection ────────────────── */
     if (flow->ndpi_flow && !flow->detection_completed &&
@@ -364,11 +515,12 @@ static void packet_callback(u_char *user __attribute__((unused)),
         }
     }
 
-    /* ── Periodic flow expiration ────────────────────────────────── */
-    if (total_packets % EXPIRE_CHECK_INTERVAL == 0) {
-        uint64_t cutoff = pkt_time_us - ((uint64_t)FLOW_EXPIRE_SEC * 1000000ULL);
-        flow_table_expire(&flow_table, cutoff, export_flow);
-    }
+    /* ── Idle expiry (after the packet joined its flow) ──────────────
+     * Every EXPIRE_CHECK_INTERVAL packets, unchanged from Phases 1-3 so
+     * offline output with -A 0 is byte-identical. Known limitation: a
+     * capture with < 1000 IPv4 packets never idle-expires offline. */
+    if (total_packets % EXPIRE_CHECK_INTERVAL == 0)
+        expire_idle(pkt_time_us);
 }
 
 /* ── Usage ───────────────────────────────────────────────────────── */
@@ -386,9 +538,12 @@ static void usage(const char *prog)
         "  -r <file>       Offline PCAP file to read\n"
         "  -i <iface>      Live capture interface (e.g., eth0)\n"
         "  -z <endpoint>   ZeroMQ endpoint (default: %s)\n"
+        "  -A <sec>        Active timeout: also export a snapshot of flows\n"
+        "                  still active after <sec> s, then every <sec> s\n"
+        "                  (default %d, 0 = off; idle timeout is %d s)\n"
         "  -v              Verbose: also print each flow JSON to stdout\n"
         "  -h              Show this help\n",
-        prog, prog, DEFAULT_ZMQ_ENDPOINT);
+        prog, prog, DEFAULT_ZMQ_ENDPOINT, FLOW_ACTIVE_TIMEOUT_SEC, FLOW_EXPIRE_SEC);
 }
 
 /* ── Main ────────────────────────────────────────────────────────── */
@@ -400,12 +555,22 @@ int main(int argc, char *argv[])
     const char *zmq_ep    = DEFAULT_ZMQ_ENDPOINT;
     int opt;
 
-    while ((opt = getopt(argc, argv, "r:i:z:vh")) != -1) {
+    while ((opt = getopt(argc, argv, "r:i:z:A:vh")) != -1) {
         switch (opt) {
         case 'r': pcap_file = optarg;  break;
         case 'i': iface     = optarg;  break;
         case 'z': zmq_ep    = optarg;  break;
         case 'v': verbose   = true;    break;
+        case 'A': {
+            char *end = NULL;
+            long sec = strtol(optarg, &end, 10);
+            if (!end || *end != '\0' || sec < 0 || sec > 86400) {
+                fprintf(stderr, "[sensor] -A must be 0..86400 seconds\n");
+                return 1;
+            }
+            active_timeout_us = (uint64_t)sec * 1000000ULL;
+            break;
+        }
         case 'h':
         default:
             usage(argv[0]);
@@ -441,32 +606,70 @@ int main(int argc, char *argv[])
         if (!handle) {
             fprintf(stderr, "[sensor] pcap_open_offline(%s): %s\n",
                     pcap_file, errbuf);
-            zmq_publisher_destroy();
+            zmq_publisher_destroy(ZMQ_DRAIN_MS);
             ndpi_wrapper_destroy();
             return 1;
         }
         fprintf(stderr, "[sensor] reading from PCAP: %s\n", pcap_file);
+        send_patience_ms = 10000;
     } else {
         handle = pcap_open_live(iface, SNAP_LEN, 1, 1000, errbuf);
         if (!handle) {
             fprintf(stderr, "[sensor] pcap_open_live(%s): %s\n",
                     iface, errbuf);
-            zmq_publisher_destroy();
+            zmq_publisher_destroy(ZMQ_DRAIN_MS);
             ndpi_wrapper_destroy();
             return 1;
         }
         fprintf(stderr, "[sensor] capturing live on: %s\n", iface);
+        live_capture = true;
     }
 
-    if (pcap_datalink(handle) != DLT_EN10MB)
-        fprintf(stderr, "[sensor] warning: non-Ethernet link layer (%d)\n",
-                pcap_datalink(handle));
+    datalink = pcap_datalink(handle);
+    {
+        switch (datalink) {
+        case DLT_EN10MB: case DLT_LINUX_SLL: case DLT_NULL: case DLT_LOOP:
+        case DLT_RAW:
+#ifdef DLT_LINUX_SLL2
+        case DLT_LINUX_SLL2:
+#endif
+#ifdef DLT_IPV4
+        case DLT_IPV4:
+#endif
+            fprintf(stderr, "[sensor] link type: %s\n",
+                    pcap_datalink_val_to_name(datalink));
+            break;
+        default:
+            fprintf(stderr, "[sensor] warning: unsupported link type %s (%d); "
+                    "no packets will be decoded\n",
+                    pcap_datalink_val_to_name(datalink), datalink);
+        }
+    }
 
     fprintf(stderr, "[sensor] starting packet capture...\n");
+
+    if (active_timeout_us)
+        fprintf(stderr, "[sensor] active timeout: %llu s (snapshots of long flows)\n",
+                (unsigned long long)(active_timeout_us / 1000000ULL));
+    else
+        fprintf(stderr, "[sensor] active timeout: off\n");
 
     while (running) {
         int ret = pcap_dispatch(handle, 64, packet_callback, NULL);
         if (ret == 0 && pcap_file) break;
+        if (!pcap_file) {
+            /* Live: also run housekeeping on the wall clock, so idle
+             * expiry and snapshots happen when no packets arrive. */
+            struct timeval now;
+            gettimeofday(&now, NULL);
+            uint64_t t = timeval_to_us(&now);
+            if (last_housekeeping_us && t > last_housekeeping_us &&
+                t - last_housekeeping_us >= HOUSEKEEPING_US)
+            {
+                expire_idle(t);
+                take_snapshots(t);
+            }
+        }
         if (ret == PCAP_ERROR) {
             fprintf(stderr, "[sensor] pcap_dispatch error: %s\n",
                     pcap_geterr(handle));
@@ -484,14 +687,19 @@ int main(int argc, char *argv[])
         "║  Packets processed: %-15lu ║\n"
         "║  Flows tracked:     %-15lu ║\n"
         "║  Flows exported:    %-15lu ║\n"
+        "║  Flows dropped:     %-15lu ║\n"
+        "║  Snapshot records:  %-15lu ║\n"
         "╚══════════════════════════════════════╝\n",
         (unsigned long)total_packets,
         (unsigned long)total_flows,
-        (unsigned long)exported_flows);
+        (unsigned long)exported_flows,
+        (unsigned long)dropped_flows,
+        (unsigned long)snapshot_records);
 
     pcap_close(handle);
-    zmq_publisher_destroy();
+    zmq_publisher_destroy(ZMQ_DRAIN_MS);
     ndpi_wrapper_destroy();
 
-    return 0;
+    /* Offline replay is expected to be lossless: signal data loss. */
+    return (pcap_file && dropped_flows > 0) ? 3 : 0;
 }

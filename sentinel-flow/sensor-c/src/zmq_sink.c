@@ -60,6 +60,15 @@ int main(int argc, char *argv[])
     int linger = 0;
     zmq_setsockopt(sock, ZMQ_LINGER, &linger, sizeof(linger));
 
+    /* No receive high-water mark. With the default (1000), a consumer
+     * that reads our stdout slowly lets the queue fill; when the sensor
+     * then disconnects, messages still in transit are discarded
+     * (observed: 1001 of 1105 flows delivered). Unlimited keeps
+     * accepting while stdout drains. Memory is bounded by the sender's
+     * own queue (ZMQ_SNDHWM 10000). */
+    int rcvhwm = 0;
+    zmq_setsockopt(sock, ZMQ_RCVHWM, &rcvhwm, sizeof(rcvhwm));
+
     if (zmq_bind(sock, endpoint) != 0) {
         fprintf(stderr, "[zmq_sink] bind(%s) failed: %s\n",
                 endpoint, zmq_strerror(zmq_errno()));

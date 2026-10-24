@@ -1,0 +1,361 @@
+{
+  "model_version": "lgbm+iforest-fv1-6e986f14",
+  "created": "2026-10-23T14:43:15Z",
+  "feature_version": 1,
+  "feature_names": [
+    "protocol",
+    "service_port",
+    "service_port_wellknown",
+    "log_pkt_count",
+    "log_bytes_up",
+    "log_bytes_down",
+    "log_bytes_total",
+    "bytes_per_pkt",
+    "log_duration_ms",
+    "log_iat_mean",
+    "log_iat_stddev",
+    "log_iat_min",
+    "log_iat_max",
+    "iat_cv",
+    "pkt_len_mean",
+    "pkt_len_stddev",
+    "pkt_len_cv",
+    "log_up_down_ratio",
+    "small_pkt_ratio",
+    "unidirectional_bytes",
+    "risk_count",
+    "has_risk",
+    "risk_known_proto_nonstd_port",
+    "risk_tls_selfsigned",
+    "risk_tls_obsolete",
+    "risk_tls_weak_cipher",
+    "risk_tls_cert_mismatch",
+    "risk_http_susp_user_agent",
+    "risk_numeric_ip_host",
+    "risk_http_susp_url",
+    "risk_http_susp_header",
+    "risk_tls_not_https",
+    "risk_susp_dga",
+    "risk_unsafe_protocol",
+    "risk_dns_susp_traffic",
+    "risk_tls_missing_sni",
+    "risk_risky_asn",
+    "risk_risky_domain",
+    "risk_malicious_fingerprint",
+    "risk_malicious_sha1_cert",
+    "risk_tls_uncommon_alpn",
+    "risk_susp_entropy",
+    "risk_unidirectional",
+    "risk_tcp_issues",
+    "risk_unresolved_hostname",
+    "risk_binary_data_transfer",
+    "risk_probing_attempt",
+    "risk_obfuscated_traffic",
+    "app_tls",
+    "app_quic",
+    "app_http",
+    "app_dns",
+    "app_unknown",
+    "app_has_subprotocol",
+    "ja4_present",
+    "ja4_quic",
+    "ja4_tls_version",
+    "ja4_sni_domain",
+    "ja4_n_ciphers",
+    "ja4_n_extensions",
+    "ja4_alpn"
+  ],
+  "input_name": "input",
+  "lgbm": {
+    "file": "c2_detector.onnx",
+    "output": "probabilities",
+    "column": 1,
+    "calibration": "see lgbm_calibration",
+    "sha256": "6e986f14723beb370077b6948b25d363e518487e7c54cbaf23620300800ca00c",
+    "params": {
+      "n_estimators": 300,
+      "learning_rate": 0.05,
+      "num_leaves": 31,
+      "min_child_samples": 10,
+      "subsample": 0.8,
+      "subsample_freq": 1,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 1.0,
+      "random_state": 42,
+      "n_jobs": 4,
+      "verbose": -1
+    }
+  },
+  "iforest": {
+    "file": "anomaly_iforest.onnx",
+    "output": "scores",
+    "raw": "negated decision_function (higher = more anomalous)",
+    "calibration": {
+      "q50": -0.06801558095156102,
+      "q995": 0.12984590202284285,
+      "at_q995": 0.8
+    },
+    "sha256": "66b3f164fd74087aac24d94ebd170f7c819f8a8531e6ff68c2600676b03d80ee",
+    "params": {
+      "n_estimators": 200,
+      "max_samples": 256,
+      "contamination": "auto",
+      "random_state": 42
+    }
+  },
+  "lgbm_calibration": {
+    "raw_threshold": 0.3297864007152475,
+    "maps_to": 0.8,
+    "fpr_budget": 0.01,
+    "fit_on": "median over 5 CV seeds of the 1%-OOF-FPR threshold",
+    "per_seed_raw_thresholds": [
+      0.3759146602297522,
+      0.4510116330359985,
+      0.3297864007152475,
+      0.26747091178904486,
+      0.3188242439474946
+    ]
+  },
+  "class_balance": false,
+  "score_policy": "ml_anomaly_score = lgbm_norm(P_lgbm); ml_iforest_score stored separately (not in the alert score: it added false alerts without recall in cross-validation)",
+  "alert_threshold": 0.8,
+  "training_data": {
+    "file": "data/training/flows_labeled.jsonl",
+    "sha256": "f4af2732515778d692f87252a3e8ab950ce072cb6b287e476eb182ba44485fff",
+    "flows": 9597,
+    "malicious": 1825,
+    "malicious_captures": 28,
+    "benign_captures": 550,
+    "group_cap": 50
+  },
+  "cv_summary": {
+    "lgbm_raw": {
+      "tp": 464,
+      "fp": 24,
+      "fn": 1361,
+      "tn": 7748,
+      "precision": 0.9508196721311475,
+      "recall": 0.25424657534246575,
+      "fpr": 0.003088008234688626,
+      "roc_auc": 0.9787546443502845,
+      "pr_auc": 0.892776167036189
+    },
+    "lgbm_calibrated": {
+      "tp": 800,
+      "fp": 127,
+      "fn": 1025,
+      "tn": 7645,
+      "precision": 0.8629989212513485,
+      "recall": 0.4383561643835616,
+      "fpr": 0.01634071024189398,
+      "roc_auc": 0.9787546443502845,
+      "pr_auc": 0.892776167036189
+    },
+    "iforest": {
+      "tp": 5,
+      "fp": 122,
+      "fn": 1820,
+      "tn": 7650,
+      "precision": 0.03937007874015748,
+      "recall": 0.0027397260273972603,
+      "fpr": 0.015697375193000514,
+      "roc_auc": 0.8457790523057832,
+      "pr_auc": 0.4230439259186346
+    },
+    "max(lgbm_cal, iforest)": {
+      "tp": 802,
+      "fp": 248,
+      "fn": 1023,
+      "tn": 7524,
+      "precision": 0.7638095238095238,
+      "recall": 0.43945205479452054,
+      "fpr": 0.0319094184251158,
+      "roc_auc": 0.9243763351405467,
+      "pr_auc": 0.6637907057578271
+    },
+    "phase2_heuristic": {
+      "tp": 0,
+      "fp": 9,
+      "fn": 1825,
+      "tn": 7763,
+      "precision": 0.0,
+      "recall": 0.0,
+      "fpr": 0.0011580030880082347,
+      "roc_auc": 0.6970551117816679,
+      "pr_auc": 0.28396512448505906
+    },
+    "ndpi_risk_only": {
+      "tp": 1679,
+      "fp": 3816,
+      "fn": 146,
+      "tn": 3956,
+      "precision": 0.3055505004549591,
+      "recall": 0.92,
+      "fpr": 0.4909933093154915,
+      "roc_auc": 0.7145033453422542,
+      "pr_auc": 0.29631954784171544
+    }
+  },
+  "cv_seed_spread": {
+    "recall": {
+      "mean": 0.452054794520548,
+      "std": 0.04174752771790599,
+      "min": 0.38904109589041097,
+      "max": 0.5117808219178083,
+      "values": [
+        0.4383561643835616,
+        0.5117808219178083,
+        0.4810958904109589,
+        0.38904109589041097,
+        0.44
+      ]
+    },
+    "precision": {
+      "mean": 0.9069555647984782,
+      "std": 0.03056238898023472,
+      "min": 0.8629989212513485,
+      "max": 0.9340425531914893,
+      "values": [
+        0.8629989212513485,
+        0.8769953051643192,
+        0.9340425531914893,
+        0.9281045751633987,
+        0.9326364692218351
+      ]
+    },
+    "fpr": {
+      "mean": 0.01114256304683479,
+      "std": 0.004466506183973266,
+      "min": 0.007076685537828101,
+      "max": 0.016855378281008748,
+      "values": [
+        0.01634071024189398,
+        0.016855378281008748,
+        0.00797735460627895,
+        0.007076685537828101,
+        0.007462686567164179
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.9802784847608909,
+      "std": 0.0012675151714978009,
+      "min": 0.9787546443502845,
+      "max": 0.9821451786885131,
+      "values": [
+        0.9787546443502845,
+        0.9803795148019938,
+        0.9810855265477055,
+        0.9790275594159576,
+        0.9821451786885131
+      ]
+    },
+    "pr_auc": {
+      "mean": 0.9047202020286507,
+      "std": 0.007231121985806966,
+      "min": 0.892776167036189,
+      "max": 0.9135685678104225,
+      "values": [
+        0.892776167036189,
+        0.9094185017191856,
+        0.9135685678104225,
+        0.9009919562506574,
+        0.9068458173267985
+      ]
+    }
+  },
+  "top_features_by_gain": [
+    [
+      "risk_tls_not_https",
+      2799.1909616179764
+    ],
+    [
+      "app_has_subprotocol",
+      1650.242746571079
+    ],
+    [
+      "app_http",
+      1540.5508978106081
+    ],
+    [
+      "ja4_n_ciphers",
+      1533.9596803681925
+    ],
+    [
+      "log_iat_min",
+      1005.2044945433736
+    ],
+    [
+      "protocol",
+      995.1391087770462
+    ],
+    [
+      "log_duration_ms",
+      620.0613075196743
+    ],
+    [
+      "log_iat_stddev",
+      596.6648934548721
+    ],
+    [
+      "pkt_len_cv",
+      557.7733922181651
+    ],
+    [
+      "log_bytes_up",
+      472.2368961693719
+    ],
+    [
+      "log_pkt_count",
+      471.9641152685508
+    ],
+    [
+      "pkt_len_mean",
+      426.0761192254722
+    ],
+    [
+      "service_port",
+      382.58289331942797
+    ],
+    [
+      "log_iat_max",
+      374.45852130744606
+    ],
+    [
+      "log_up_down_ratio",
+      363.2366025876254
+    ]
+  ],
+  "onnx_parity": {
+    "lgbm_outputs": [
+      "label",
+      "probabilities"
+    ],
+    "iforest_outputs": [
+      "label",
+      "scores"
+    ],
+    "lgbm_max_abs_diff": 0.00036882477568844774,
+    "iforest_max_abs_diff": 3.078111211474166e-07,
+    "alert_decisions_differ": 0,
+    "rows_checked": 9597,
+    "latency_both_models": {
+      "batch_1_ms": 2.004156065004281,
+      "batch_100_ms": 5.463235049955983,
+      "batch_1000_ms": 30.511192500034667
+    },
+    "onnxruntime": "1.31.0"
+  },
+  "versions": {
+    "python": "3.14.7",
+    "numpy": "2.5.4",
+    "lightgbm": "4.7.0",
+    "scikit-learn": "1.9.1",
+    "onnx": "1.23.2",
+    "onnxmltools": "1.16.0",
+    "skl2onnx": "1.20.0"
+  },
+  "files": [
+    "c2_detector.onnx",
+    "anomaly_iforest.onnx"
+  ]
+}

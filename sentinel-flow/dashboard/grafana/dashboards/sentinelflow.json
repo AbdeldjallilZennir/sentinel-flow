@@ -1,0 +1,475 @@
+{
+  "uid": "sentinelflow-phase2",
+  "title": "SentinelFlow \u2014 Flows, ML Detections & Mitigations",
+  "tags": [
+    "sentinelflow"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 4,
+  "editable": true,
+  "refresh": "10s",
+  "time": {
+    "from": "now-25y",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "piechart",
+      "title": "Protocol Distribution",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 9
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "options": {
+        "reduceOptions": {
+          "values": true,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT app_protocol, count() AS flows\nFROM sentinel.network_flows\nGROUP BY app_protocol\nORDER BY flows DESC"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Traffic Volume (bytes per capture second)",
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 16,
+        "h": 9
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decbytes",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 80,
+            "showPoints": "always",
+            "pointSize": 6
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "queryType": "timeseries",
+          "rawSql": "SELECT toDateTime(intDiv(first_seen_us, 1000000)) AS time,\n       sum(bytes_up) AS bytes_up, sum(bytes_down) AS bytes_down\nFROM sentinel.network_flows\nGROUP BY time\nORDER BY time"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "JA4 TLS Fingerprints (with ML score)",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT ja4_client, count() AS flows, uniqExact(dst_ip) AS servers,\n       arrayStringConcat(groupUniqArray(3)(app_protocol), ',') AS protocols,\n       round(max(ml_anomaly_score), 3) AS max_ml_score,\n       countIf(ml_anomaly_score >= 0.8) AS ml_alerts\nFROM sentinel.network_flows\nWHERE ja4_client NOT IN ('', 'N/A')\nGROUP BY ja4_client\nORDER BY max_ml_score DESC, flows DESC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ja4_client"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 340
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max_ml_score"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.8
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "High-Risk Flows (alerts)",
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ml_anomaly_score"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.8
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ndpi_risk_str"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 300
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "first_seen"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT fromUnixTimestamp64Micro(toInt64(first_seen_us)) AS first_seen,\n       src_ip, src_port, dst_ip, dst_port, app_protocol,\n       ndpi_risk_str, round(ml_anomaly_score, 3) AS ml_anomaly_score,\n       round(ml_c2_proba, 3) AS c2_proba, ml_model\nFROM sentinel.network_flows\nWHERE is_alert = 1\nORDER BY ml_anomaly_score DESC, first_seen_us\nLIMIT 500"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "ML Detections (ml_anomaly_score >= 0.80)",
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "score"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.8
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "iforest"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.8
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "flow"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 330
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT concat(src_ip, ' -> ', dst_ip, ':', toString(dst_port)) AS flow,\n       app_protocol, count() AS flows, round(max(ml_anomaly_score), 3) AS score,\n       round(max(ml_c2_proba), 3) AS c2_proba, round(max(ml_iforest_score), 3) AS iforest,\n       any(ml_model) AS model\nFROM sentinel.network_flows\nWHERE ml_anomaly_score >= 0.8\nGROUP BY src_ip, dst_ip, dst_port, app_protocol\nORDER BY score DESC, flows DESC\nLIMIT 100"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Active Kernel Mitigations & XDP Drop Counters",
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "sentinel-clickhouse"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dropped_pkts"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "transparent",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dropped_bytes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "flow"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 360
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "sentinel-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT ip,\n       argMax(backend, ts_us) AS backend,\n       multiIf(argMax(action, ts_us) = 'expire', 'expired',\n               argMax(action, ts_us) = 'unblock', 'unblocked', 'active') AS status,\n       argMaxIf(reason, ts_us, action = 'block') AS reason,\n       round(argMaxIf(score, ts_us, action = 'block'), 3) AS score,\n       argMaxIf(flow, ts_us, action = 'block') AS flow,\n       max(dropped_pkts) AS dropped_pkts, max(dropped_bytes) AS dropped_bytes,\n       formatDateTime(toDateTime(intDiv(minIf(ts_us, action = 'block'), 1000000), 'UTC'),\n                      '%Y-%m-%d %H:%i:%S') AS first_blocked\nFROM sentinel.mitigations\nWHERE ip != '' AND action IN ('block', 'counters', 'expire', 'unblock')\nGROUP BY ip\nORDER BY (status = 'active') DESC, dropped_pkts DESC, minIf(ts_us, action = 'block'), ip"
+        }
+      ]
+    }
+  ]
+}

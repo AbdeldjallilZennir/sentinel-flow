@@ -26,3 +26,18 @@ venv/
 .env.local
 *.key
 *.pem
+
+# Phase 2 runtime data (SQLite DB, JSONL, rejects)
+sentinel-flow/engine-ml/data/
+
+# Phase 3: downloaded malware traffic (re-fetch with engine-ml/datasets/fetch_mta.py),
+# training virtualenv
+sentinel-flow/engine-ml/datasets/mta/
+sentinel-flow/engine-ml/datasets/mta_holdout/
+sentinel-flow/engine-ml/.venv-train/
+
+# Phase 4 build outputs (rebuild: see sentinel-flow/Part4.md §6)
+sentinel-flow/mitigation-ebpf/*.o
+sentinel-flow/mitigation-ebpf/xdp_ctl
+
+sentinel-flow/engine-ml/.venv-runtime/

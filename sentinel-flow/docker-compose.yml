@@ -1,0 +1,60 @@
+# SentinelFlow Phase 2 — analytics stack (ClickHouse + Grafana).
+#
+#   docker compose up -d
+#   ./engine-ml/daemon.py            # auto-detects ClickHouse on :8123
+#
+# Grafana: http://localhost:3000  (admin / sentinel)
+# ClickHouse HTTP: http://localhost:8123  (sentinel / sentinel)
+#
+# Both ports are bound to 127.0.0.1 only. engine-ml/daemon.py also writes to
+# SQLite + JSONL, so the stack is optional for ingestion.
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: sentinel-clickhouse
+    environment:
+      CLICKHOUSE_DB: sentinel
+      CLICKHOUSE_USER: sentinel
+      CLICKHOUSE_PASSWORD: sentinel
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ports:
+      - "127.0.0.1:8123:8123"
+    volumes:
+      - ./engine-ml/sql/init_clickhouse.sql:/docker-entrypoint-initdb.d/01_init_clickhouse.sql:ro
+      - clickhouse-data:/var/lib/clickhouse
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8123/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    container_name: sentinel-grafana
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: sentinel
+      # Read-only anonymous viewing (port is bound to 127.0.0.1 only).
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_DEFAULT_THEME: dark
+      # Downloaded from grafana.com on first start (needs network once;
+      # cached in the grafana-data volume afterwards).
+      GF_PLUGINS_PREINSTALL: grafana-clickhouse-datasource
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/sentinelflow.json
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./dashboard/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./dashboard/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  clickhouse-data:
+  grafana-data:

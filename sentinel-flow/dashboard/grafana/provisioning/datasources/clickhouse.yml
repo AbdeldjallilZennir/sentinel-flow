@@ -1,0 +1,14 @@
+apiVersion: 1
+datasources:
+  - name: SentinelFlow ClickHouse
+    uid: sentinel-clickhouse
+    type: grafana-clickhouse-datasource
+    isDefault: true
+    jsonData:
+      host: clickhouse
+      port: 8123
+      protocol: http
+      username: sentinel
+      defaultDatabase: sentinel
+    secureJsonData:
+      password: sentinel

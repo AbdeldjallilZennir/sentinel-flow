@@ -91,6 +91,17 @@ void flow_table_flush(flow_entry_t **table,
     }
 }
 
+/* ── Iterate ─────────────────────────────────────────────────────── */
+
+void flow_table_foreach(flow_entry_t **table,
+                        void (*fn)(flow_entry_t *, void *), void *ctx)
+{
+    flow_entry_t *entry, *tmp;
+    HASH_ITER(hh, *table, entry, tmp) {
+        fn(entry, ctx);
+    }
+}
+
 /* ── Count ───────────────────────────────────────────────────────── */
 
 uint32_t flow_table_count(flow_entry_t **table)

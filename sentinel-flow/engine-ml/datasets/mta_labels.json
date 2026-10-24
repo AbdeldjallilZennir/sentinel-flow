@@ -1,0 +1,139 @@
+{
+  "_doc": [
+    "Hand-curated flow labels for the malware-traffic-analysis.net cases.",
+    "Built by reading each case's IOC text (or, where none exists, the flows).",
+    "malicious_ips / malicious_domains: attacker-controlled infrastructure",
+    "  (C2, payload delivery, exfiltration). Domains are mapped to IPs using",
+    "  the capture's own DNS answers and TLS SNI (tshark), for labeling only.",
+    "ambiguous_ips / ambiguous_domains: shared or legitimate services that the",
+    "  malware used (CDNs, Dropbox, Telegram, IP-lookup sites, compromised",
+    "  sites). Flows to them are EXCLUDED from training and evaluation.",
+    "Every other flow in the capture is labeled benign background.",
+    "Email-header IPs and reference links in the IOC files are ignored."
+  ],
+  "exclude_pcaps": {
+    "2025-03-10/vmnet8a.pcap": "near-duplicate raw capture of the same Remcos run (11k pkts, same 19 min); kept out to avoid double counting"
+  },
+  "cases": {
+    "2023-05-10": {
+      "family": "Qakbot + Cobalt Strike + VNC",
+      "malicious_ips": ["103.53.42.238", "5.42.221.144", "45.155.37.101", "91.193.16.139", "144.208.127.242",
+                        "149.102.225.18", "207.148.14.105", "2.49.63.193", "81.224.201.143", "46.151.30.109",
+                        "77.105.141.154"],
+      "malicious_domains": ["floatfil.com", "amorconsulta.com.br", "masjidtrust.com", "vogue-pharmaceuticals.com"],
+      "ambiguous_domains": []
+    },
+    "2023-07-12": {
+      "family": "Gozi/ISFB + Cobalt Strike",
+      "malicious_ips": ["151.248.117.244", "91.199.147.95", "188.127.224.25", "194.58.102.187", "193.149.176.60",
+                        "170.130.55.162"],
+      "malicious_domains": ["diwdjndsfnj.ru", "iwqdndomdn.su", "iamupdate.com", "softwaredw.com"],
+      "ambiguous_domains": []
+    },
+    "2023-10-03": {
+      "family": "Pikabot + Cobalt Strike",
+      "malicious_ips": ["207.246.78.68", "167.86.81.87", "167.86.96.3", "79.141.175.96", "38.242.240.28",
+                        "209.126.9.47", "179.60.149.244"],
+      "malicious_domains": ["zzerxc.com"],
+      "ambiguous_domains": []
+    },
+    "2023-10-31": {
+      "family": "IcedID",
+      "malicious_ips": ["45.61.137.225", "45.61.139.232", "45.61.136.22", "162.33.179.136", "159.89.124.188"],
+      "malicious_domains": ["grafielucho.com", "manjuskploman.com", "qousahaff.com", "brojizuza.com", "asleytomafa.com"],
+      "ambiguous_ips": ["104.21.32.6"],
+      "ambiguous_domains": []
+    },
+    "2023-12-18": {
+      "family": "Pikabot + Cobalt Strike",
+      "malicious_ips": ["143.95.249.177", "45.33.15.215", "45.56.71.218", "45.76.22.139", "45.76.96.172",
+                        "45.76.119.22", "51.161.81.190", "64.176.13.28", "65.20.85.39", "69.164.213.141",
+                        "70.34.196.219", "78.141.200.111", "78.141.223.212", "95.179.247.197", "149.28.100.66",
+                        "154.211.12.126", "154.221.30.136", "155.138.140.156", "172.232.54.192", "172.232.189.166",
+                        "208.76.221.253", "216.238.79.12", "207.246.99.159"],
+      "malicious_domains": ["shakyastatuestrade.com", "masterunis.net"],
+      "ambiguous_domains": ["tsdandassociates.co.sz"]
+    },
+    "2024-01-09": {
+      "family": "AsyncRAT",
+      "malicious_ips": ["45.126.209.4"],
+      "malicious_domains": ["madmrx.duckdns.org"],
+      "ambiguous_domains": []
+    },
+    "2024-03-14": {
+      "family": "AsyncRAT + XWorm",
+      "malicious_ips": ["101.99.94.234", "91.134.150.150", "91.92.252.234"],
+      "malicious_domains": [],
+      "ambiguous_domains": ["dl.dropboxusercontent.com", "sunshine-bizrate-inc-software.trycloudflare.com",
+                            "icanhazip.com", "ip-api.com", "api.mylnikov.org"]
+    },
+    "2024-03-19": {
+      "family": "DarkGate",
+      "malicious_ips": [],
+      "malicious_domains": ["escuelademarina.com", "badbutperfect.com"],
+      "ambiguous_domains": []
+    },
+    "2024-04-18": {
+      "family": "SSLoad + Cobalt Strike",
+      "malicious_ips": ["212.18.104.28", "85.239.53.219", "193.32.176.22"],
+      "malicious_domains": [],
+      "ambiguous_domains": ["t.me", "api.openweathermap.org", "api.ipify.org"]
+    },
+    "2024-06-12": {
+      "family": "KoiLoader/KoiStealer",
+      "malicious_ips": ["89.251.22.227"],
+      "malicious_domains": ["mawyon.com", "mucecsas.com"],
+      "ambiguous_domains": ["sites.google.com", "lechiavetteusb.it"]
+    },
+    "2024-06-25": {
+      "family": "Latrodectus + BackConnect + Keyhole VNC",
+      "malicious_ips": ["85.208.108.63", "193.32.177.192", "85.208.108.30", "74.119.194.126", "94.232.249.102",
+                        "94.232.249.103", "184.174.96.179", "104.129.20.167", "198.244.224.83", "64.7.198.158"],
+      "malicious_domains": ["kurvabbr.pw", "barsen.monster", "bibidj.biz", "barsman.biz", "garunt.biz",
+                            "finjuiceer.com", "meakdgahup.com", "riscoarchez.com"],
+      "ambiguous_domains": ["firebasestorage.googleapis.com", "kkk17-427021.appspot.com", "namo-426715.appspot.com"]
+    },
+    "2024-09-19": {
+      "family": "Lumma Stealer",
+      "malicious_ips": [],
+      "malicious_domains": ["genedjestytw.shop", "chick-chick666.com", "software-license1.com", "nhit66.com",
+                            "access-htaccess.com", "back-kurwa.com", "gzipdot.com"],
+      "ambiguous_domains": ["jspm.dev", "blockstream.info", "btcscan.org", "exp.btcme.com",
+                            "api.blockcypher.com", "bitcoinexplorer.org"]
+    },
+    "2024-10-23": {
+      "family": "Redline Stealer",
+      "malicious_ips": ["188.190.10.10"],
+      "malicious_domains": [],
+      "ambiguous_ips": ["104.26.13.31"],
+      "ambiguous_domains": ["api.ip.sb"]
+    },
+    "2024-12-17": {
+      "family": "NetSupport RAT",
+      "malicious_ips": ["194.180.191.64"],
+      "malicious_domains": ["tactlat.xyz"],
+      "ambiguous_domains": ["banks-canada.com", "geo.netsupportsoftware.com"]
+    },
+    "2025-01-31": {
+      "family": "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)",
+      "_note": "No IOC file published; labeled from the flows. Telegram, checkip and Cloudflare IP-lookup flows are ambiguous.",
+      "malicious_ips": ["93.89.225.40", "208.91.198.143"],
+      "malicious_domains": [],
+      "ambiguous_ips": ["149.154.167.220", "193.122.6.168", "104.21.80.1"],
+      "ambiguous_domains": []
+    },
+    "2025-03-10": {
+      "family": "Remcos RAT",
+      "_note": "IOCs from Unit 42 (linked from the MTA page), saved as *.Unit42.txt",
+      "malicious_ips": ["206.123.152.51"],
+      "malicious_domains": ["hftook7lmaroutsg1.duckdns.org"],
+      "ambiguous_domains": []
+    },
+    "2025-11-19": {
+      "family": "XWorm",
+      "malicious_ips": ["193.187.91.217"],
+      "malicious_domains": [],
+      "ambiguous_domains": ["pastebin.com"]
+    }
+  }
+}

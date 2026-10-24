@@ -26,6 +26,7 @@ extern "C" {
  * Socket types
  * -------------------------------------------------------------------------- */
 
+#define ZMQ_PAIR    0
 #define ZMQ_PUB     1
 #define ZMQ_SUB     2
 #define ZMQ_PULL    7
@@ -36,6 +37,7 @@ extern "C" {
  * -------------------------------------------------------------------------- */
 
 #define ZMQ_SUBSCRIBE   6
+#define ZMQ_RCVMORE    13
 #define ZMQ_LINGER     17
 #define ZMQ_SNDHWM     23
 #define ZMQ_RCVHWM     24
@@ -48,6 +50,10 @@ extern "C" {
 
 #define ZMQ_DONTWAIT    1
 #define ZMQ_SNDMORE     2
+
+/* Socket monitor events (libzmq 4.x) */
+#define ZMQ_EVENT_CONNECTED     0x0001
+#define ZMQ_EVENT_DISCONNECTED  0x0200
 
 /* --------------------------------------------------------------------------
  * Context
@@ -76,6 +82,9 @@ int   zmq_setsockopt (void *socket, int option_name,
 
 int   zmq_send (void *socket, const void *buf, size_t len, int flags);
 int   zmq_recv (void *socket, void *buf, size_t len, int flags);
+int   zmq_getsockopt (void *socket, int option_name,
+                      void *option_value, size_t *option_len);
+int   zmq_socket_monitor (void *socket, const char *endpoint, int events);
 
 /* --------------------------------------------------------------------------
  * Error handling

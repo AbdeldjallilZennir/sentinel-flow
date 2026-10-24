@@ -12,14 +12,17 @@
 int zmq_publisher_init(const char *endpoint);
 
 /*
- * Send a JSON string (non-blocking).  Returns 0 on success, -1 on
- * failure or EAGAIN (message dropped).
+ * Send a JSON string. Tries non-blocking first; if the queue is full,
+ * keeps retrying for up to patience_ms (in 200 ms steps). Returns 0 on
+ * success, -1 if the message was dropped.
  */
-int zmq_publisher_send(const char *json_str);
+int zmq_publisher_send(const char *json_str, int patience_ms);
 
 /*
- * Gracefully close the socket and destroy the context.
+ * Close the socket and destroy the context. If a consumer is connected,
+ * wait up to drain_ms for queued messages to be delivered; otherwise
+ * give up after 500 ms.
  */
-void zmq_publisher_destroy(void);
+void zmq_publisher_destroy(int drain_ms);
 
 #endif /* ZMQ_PUBLISHER_H */

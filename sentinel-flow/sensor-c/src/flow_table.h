@@ -65,7 +65,8 @@ typedef struct flow_entry {
     uint16_t                  ndpi_packets_processed;
 
     /* ── Export control ──────────────────────────────────────────── */
-    bool exported;
+    bool     exported;        /* final record sent (idle/flush)      */
+    uint64_t last_export_us;  /* last active-timeout snapshot, 0=none */
 } flow_entry_t;
 
 /* ── Public API ──────────────────────────────────────────────────── */
@@ -92,6 +93,12 @@ void flow_table_expire(flow_entry_t **table,
  */
 void flow_table_flush(flow_entry_t **table,
                       void (*export_fn)(flow_entry_t *));
+
+/*
+ * Call fn(entry, ctx) for every flow (the table is not modified).
+ */
+void flow_table_foreach(flow_entry_t **table,
+                        void (*fn)(flow_entry_t *, void *), void *ctx);
 
 /*
  * Return number of active flows.

@@ -307,8 +307,11 @@ static void print_number(printbuf *p, const cJSON *item)
          * digit instead of collapsing into a 6-digit %g form. */
         snprintf(buf, sizeof(buf), "%.0f", d);
     } else {
-        /* Non-integer floating-point: 9 significant digits. */
-        snprintf(buf, sizeof(buf), "%.9g", d);
+        /* Non-integer floating-point: 15 significant digits, the most
+         * a double always round-trips. 9 digits (the previous value)
+         * dropped microseconds from flow_duration_ms for flows longer
+         * than ~1000 s (e.g. 5003499.711 ms printed as 5003499.71). */
+        snprintf(buf, sizeof(buf), "%.15g", d);
     }
     printbuf_append_str(p, buf);
 }

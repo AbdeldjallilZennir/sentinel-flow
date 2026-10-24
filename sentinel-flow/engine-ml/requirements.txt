@@ -1,0 +1,14 @@
+# daemon.py and query_dashboard.py run on the Python 3 standard library
+# alone. Everything below is OPTIONAL.
+
+# Phase 3 ONNX scoring. Without these the daemon logs the reason and uses
+# the Phase 2 heuristic scorer (ml_model = "heuristic_v1").
+numpy
+onnxruntime
+
+# If installed, daemon.py binds the ZMQ socket directly instead of spawning
+# sensor-c/build/zmq_sink. Not installed on the reference host, so that
+# path is untested (see part2.md / part3.md).
+# pyzmq>=25
+
+# Training dependencies: see requirements-train.txt

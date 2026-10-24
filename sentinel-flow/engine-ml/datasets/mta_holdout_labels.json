@@ -1,0 +1,45 @@
+{
+  "_doc": [
+    "Labels for the HOLDOUT cases (datasets/mta_holdout/). Same rules as",
+    "mta_labels.json. Written from the IOC texts before any model was run on",
+    "these captures. These cases are never read by build_dataset.py."
+  ],
+  "exclude_pcaps": {},
+  "cases": {
+    "2023-11-06": {
+      "family": "404 TDS + Cobalt Strike",
+      "_note": "IOCs from the MTA page text (the IOC zip name contains 'malware' and is skipped by fetch_mta.py's filter)",
+      "malicious_ips": ["170.130.55.46", "170.130.55.117", "170.130.165.37", "170.130.165.107", "170.130.55.150"],
+      "malicious_domains": ["truckjeepsuvparts.com", "tradembs.com", "medilabr.com", "ftroftrodro.top"],
+      "ambiguous_domains": []
+    },
+    "2023-11-20": {
+      "family": "DarkGate",
+      "malicious_ips": ["45.154.98.21", "188.246.224.221"],
+      "malicious_domains": ["screenshot.photos"],
+      "ambiguous_domains": ["api.onedrive.com", "1drv.com", "onedrive.live.com"]
+    },
+    "2024-02-21": {
+      "family": "SocGholish + AsyncRAT",
+      "malicious_ips": ["66.135.17.87", "45.59.170.106", "49.13.65.235", "167.71.107.109", "5.161.113.150"],
+      "malicious_domains": ["retraining.allstardriving.org", "aphqj.members.openarmscv.com", "pbvzje4.top",
+                            "bjlkchhaaigceke.top", "h4cg7rhbmieqskr.top"],
+      "ambiguous_domains": ["psiewdr.org", "api.ipify.org", "checkip.dyndns.org", "ipinfo.io"]
+    },
+    "2025-08-15": {
+      "family": "Lumma Stealer + SectopRAT",
+      "malicious_ips": ["5.10.250.239"],
+      "malicious_domains": ["filesclosedset.icu", "keygen-win.org", "lokrlogalshit.icu", "media98pc4.info",
+                            "winsofthub.com", "desk-app-now.com", "kletkamozga.ru", "mastwin.in",
+                            "ordinarniyvrach.ru", "stolewnica.ru", "vishneviyjazz.ru", "visokiywkaf.ru",
+                            "yamakrug.ru", "yrokistorii.ru"],
+      "ambiguous_domains": ["facebook.com", "mega.nz"]
+    },
+    "2025-12-29": {
+      "family": "ClickFix + NetSupport RAT",
+      "malicious_ips": ["80.253.249.145", "185.39.19.96"],
+      "malicious_domains": ["ivanstonework.com", "extracareliving.com", "relativegoingplanning.net"],
+      "ambiguous_domains": ["sites.google.com"]
+    }
+  }
+}

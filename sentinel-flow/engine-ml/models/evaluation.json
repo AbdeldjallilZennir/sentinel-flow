@@ -1,0 +1,1315 @@
+{
+  "threshold": 0.8,
+  "folds": [
+    {
+      "fold": 0,
+      "test_flows": 1766,
+      "test_malicious": 212,
+      "test_captures": 102,
+      "test_malicious_captures": 4,
+      "lgbm": {
+        "tp": 91,
+        "fp": 0,
+        "fn": 121,
+        "tn": 1554,
+        "precision": 1.0,
+        "recall": 0.42924528301886794,
+        "fpr": 0.0,
+        "roc_auc": 0.99322503096088,
+        "pr_auc": 0.9646063162073615
+      }
+    },
+    {
+      "fold": 1,
+      "test_flows": 1748,
+      "test_malicious": 193,
+      "test_captures": 123,
+      "test_malicious_captures": 16,
+      "lgbm": {
+        "tp": 83,
+        "fp": 20,
+        "fn": 110,
+        "tn": 1535,
+        "precision": 0.8058252427184466,
+        "recall": 0.43005181347150256,
+        "fpr": 0.012861736334405145,
+        "roc_auc": 0.9436149476034186,
+        "pr_auc": 0.6361114840269468
+      }
+    },
+    {
+      "fold": 2,
+      "test_flows": 1861,
+      "test_malicious": 307,
+      "test_captures": 112,
+      "test_malicious_captures": 2,
+      "lgbm": {
+        "tp": 68,
+        "fp": 0,
+        "fn": 239,
+        "tn": 1554,
+        "precision": 1.0,
+        "recall": 0.22149837133550487,
+        "fpr": 0.0,
+        "roc_auc": 0.9783368757310125,
+        "pr_auc": 0.8785283622486626
+      }
+    },
+    {
+      "fold": 3,
+      "test_flows": 1762,
+      "test_malicious": 207,
+      "test_captures": 109,
+      "test_malicious_captures": 4,
+      "lgbm": {
+        "tp": 187,
+        "fp": 0,
+        "fn": 20,
+        "tn": 1555,
+        "precision": 1.0,
+        "recall": 0.9033816425120773,
+        "fpr": 0.0,
+        "roc_auc": 0.9962564269847927,
+        "pr_auc": 0.981593705092426
+      }
+    },
+    {
+      "fold": 4,
+      "test_flows": 2460,
+      "test_malicious": 906,
+      "test_captures": 115,
+      "test_malicious_captures": 2,
+      "lgbm": {
+        "tp": 35,
+        "fp": 4,
+        "fn": 871,
+        "tn": 1550,
+        "precision": 0.8974358974358975,
+        "recall": 0.03863134657836645,
+        "fpr": 0.002574002574002574,
+        "roc_auc": 0.9863458538955227,
+        "pr_auc": 0.9455870875417739
+      }
+    }
+  ],
+  "oof": {
+    "lgbm_raw": {
+      "metrics": {
+        "tp": 464,
+        "fp": 24,
+        "fn": 1361,
+        "tn": 7748,
+        "precision": 0.9508196721311475,
+        "recall": 0.25424657534246575,
+        "fpr": 0.003088008234688626,
+        "roc_auc": 0.9787546443502845,
+        "pr_auc": 0.892776167036189
+      },
+      "family_recall": {
+        "Gozi/ISFB + Cobalt Strike": {
+          "detected": 35,
+          "flows": 903,
+          "recall": 0.03875968992248062
+        },
+        "Pikabot + Cobalt Strike": {
+          "detected": 240,
+          "flows": 465,
+          "recall": 0.5161290322580645
+        },
+        "Latrodectus + BackConnect + Keyhole VNC": {
+          "detected": 82,
+          "flows": 165,
+          "recall": 0.49696969696969695
+        },
+        "Qakbot + Cobalt Strike + VNC": {
+          "detected": 81,
+          "flows": 91,
+          "recall": 0.8901098901098901
+        },
+        "DarkGate": {
+          "detected": 1,
+          "flows": 68,
+          "recall": 0.014705882352941176
+        },
+        "KoiLoader/KoiStealer": {
+          "detected": 2,
+          "flows": 30,
+          "recall": 0.06666666666666667
+        },
+        "Lumma Stealer": {
+          "detected": 7,
+          "flows": 29,
+          "recall": 0.2413793103448276
+        },
+        "IcedID": {
+          "detected": 13,
+          "flows": 17,
+          "recall": 0.7647058823529411
+        },
+        "AsyncRAT + XWorm": {
+          "detected": 1,
+          "flows": 12,
+          "recall": 0.08333333333333333
+        },
+        "SSLoad + Cobalt Strike": {
+          "detected": 1,
+          "flows": 12,
+          "recall": 0.08333333333333333
+        },
+        "Emotet": {
+          "detected": 1,
+          "flows": 7,
+          "recall": 0.14285714285714285
+        },
+        "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "nDPI malware sample": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "AsyncRAT": {
+          "detected": 0,
+          "flows": 3,
+          "recall": 0.0
+        },
+        "Remcos RAT": {
+          "detected": 0,
+          "flows": 3,
+          "recall": 0.0
+        },
+        "DNS exfiltration": {
+          "detected": 0,
+          "flows": 2,
+          "recall": 0.0
+        },
+        "chisel tunnel": {
+          "detected": 0,
+          "flows": 2,
+          "recall": 0.0
+        },
+        "Redline Stealer": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "NetSupport RAT": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "XWorm": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "Emotet (DGA)": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "iodine DNS tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "dns2tcp tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "ICMP tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "TrickBot": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        }
+      },
+      "captures_with_malicious_flows": 28,
+      "captures_detected": 12,
+      "captures_missed": [
+        "mta:2024-01-09",
+        "mta:2024-10-23",
+        "mta:2024-12-17",
+        "mta:2025-01-31",
+        "mta:2025-03-10",
+        "mta:2025-11-19",
+        "ndpi:Emotet_infection_url_dga_negative",
+        "ndpi:Emotet_infection_url_dga_positive",
+        "ndpi:dns-exf",
+        "ndpi:dns-tunnel-iodine",
+        "ndpi:dns2tcp_tunnel",
+        "ndpi:dns_exfiltration",
+        "ndpi:icmp-tunnel",
+        "ndpi:malware",
+        "ndpi:trickbot",
+        "ndpi:websocket-chisel-ssh"
+      ],
+      "benign_fpr_by_source": {
+        "mta_background": {
+          "false_alerts": 22,
+          "flows": 1929,
+          "fpr": 0.011404872991187144
+        },
+        "ndpi": {
+          "false_alerts": 2,
+          "flows": 5839,
+          "fpr": 0.0003425244048638465
+        },
+        "repo": {
+          "false_alerts": 0,
+          "flows": 4,
+          "fpr": 0.0
+        }
+      },
+      "recall_at_fpr": [
+        {
+          "fpr_target": 0.001,
+          "threshold": 0.9799320910342024,
+          "recall": 0.0936986301369863
+        },
+        {
+          "fpr_target": 0.005,
+          "threshold": 0.5459583472615439,
+          "recall": 0.3117808219178082
+        },
+        {
+          "fpr_target": 0.01,
+          "threshold": 0.3759146592307521,
+          "recall": 0.423013698630137
+        },
+        {
+          "fpr_target": 0.02,
+          "threshold": 0.194643348948416,
+          "recall": 0.7243835616438357
+        },
+        {
+          "fpr_target": 0.05,
+          "threshold": 0.0342907198954708,
+          "recall": 0.9287671232876712
+        }
+      ]
+    },
+    "lgbm_calibrated": {
+      "metrics": {
+        "tp": 800,
+        "fp": 127,
+        "fn": 1025,
+        "tn": 7645,
+        "precision": 0.8629989212513485,
+        "recall": 0.4383561643835616,
+        "fpr": 0.01634071024189398,
+        "roc_auc": 0.9787546443502845,
+        "pr_auc": 0.892776167036189
+      },
+      "family_recall": {
+        "Gozi/ISFB + Cobalt Strike": {
+          "detected": 276,
+          "flows": 903,
+          "recall": 0.30564784053156147
+        },
+        "Pikabot + Cobalt Strike": {
+          "detected": 250,
+          "flows": 465,
+          "recall": 0.5376344086021505
+        },
+        "Latrodectus + BackConnect + Keyhole VNC": {
+          "detected": 134,
+          "flows": 165,
+          "recall": 0.8121212121212121
+        },
+        "Qakbot + Cobalt Strike + VNC": {
+          "detected": 86,
+          "flows": 91,
+          "recall": 0.945054945054945
+        },
+        "DarkGate": {
+          "detected": 3,
+          "flows": 68,
+          "recall": 0.04411764705882353
+        },
+        "KoiLoader/KoiStealer": {
+          "detected": 12,
+          "flows": 30,
+          "recall": 0.4
+        },
+        "Lumma Stealer": {
+          "detected": 12,
+          "flows": 29,
+          "recall": 0.41379310344827586
+        },
+        "IcedID": {
+          "detected": 14,
+          "flows": 17,
+          "recall": 0.8235294117647058
+        },
+        "AsyncRAT + XWorm": {
+          "detected": 1,
+          "flows": 12,
+          "recall": 0.08333333333333333
+        },
+        "SSLoad + Cobalt Strike": {
+          "detected": 7,
+          "flows": 12,
+          "recall": 0.5833333333333334
+        },
+        "Emotet": {
+          "detected": 2,
+          "flows": 7,
+          "recall": 0.2857142857142857
+        },
+        "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "nDPI malware sample": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "AsyncRAT": {
+          "detected": 2,
+          "flows": 3,
+          "recall": 0.6666666666666666
+        },
+        "Remcos RAT": {
+          "detected": 0,
+          "flows": 3,
+          "recall": 0.0
+        },
+        "DNS exfiltration": {
+          "detected": 0,
+          "flows": 2,
+          "recall": 0.0
+        },
+        "chisel tunnel": {
+          "detected": 0,
+          "flows": 2,
+          "recall": 0.0
+        },
+        "Redline Stealer": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "NetSupport RAT": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "XWorm": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "Emotet (DGA)": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "iodine DNS tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "dns2tcp tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "ICMP tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "TrickBot": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        }
+      },
+      "captures_with_malicious_flows": 28,
+      "captures_detected": 14,
+      "captures_missed": [
+        "mta:2024-10-23",
+        "mta:2024-12-17",
+        "mta:2025-01-31",
+        "mta:2025-03-10",
+        "ndpi:Emotet_infection_url_dga_negative",
+        "ndpi:Emotet_infection_url_dga_positive",
+        "ndpi:dns-exf",
+        "ndpi:dns-tunnel-iodine",
+        "ndpi:dns2tcp_tunnel",
+        "ndpi:dns_exfiltration",
+        "ndpi:icmp-tunnel",
+        "ndpi:malware",
+        "ndpi:trickbot",
+        "ndpi:websocket-chisel-ssh"
+      ],
+      "benign_fpr_by_source": {
+        "mta_background": {
+          "false_alerts": 37,
+          "flows": 1929,
+          "fpr": 0.01918092275790565
+        },
+        "ndpi": {
+          "false_alerts": 90,
+          "flows": 5839,
+          "fpr": 0.015413598218873096
+        },
+        "repo": {
+          "false_alerts": 0,
+          "flows": 4,
+          "fpr": 0.0
+        }
+      }
+    },
+    "iforest": {
+      "metrics": {
+        "tp": 5,
+        "fp": 122,
+        "fn": 1820,
+        "tn": 7650,
+        "precision": 0.03937007874015748,
+        "recall": 0.0027397260273972603,
+        "fpr": 0.015697375193000514,
+        "roc_auc": 0.8457790523057832,
+        "pr_auc": 0.4230439259186346
+      },
+      "family_recall": {
+        "Gozi/ISFB + Cobalt Strike": {
+          "detected": 0,
+          "flows": 903,
+          "recall": 0.0
+        },
+        "Pikabot + Cobalt Strike": {
+          "detected": 0,
+          "flows": 465,
+          "recall": 0.0
+        },
+        "Latrodectus + BackConnect + Keyhole VNC": {
+          "detected": 0,
+          "flows": 165,
+          "recall": 0.0
+        },
+        "Qakbot + Cobalt Strike + VNC": {
+          "detected": 3,
+          "flows": 91,
+          "recall": 0.03296703296703297
+        },
+        "DarkGate": {
+          "detected": 0,
+          "flows": 68,
+          "recall": 0.0
+        },
+        "KoiLoader/KoiStealer": {
+          "detected": 0,
+          "flows": 30,
+          "recall": 0.0
+        },
+        "Lumma Stealer": {
+          "detected": 0,
+          "flows": 29,
+          "recall": 0.0
+        },
+        "IcedID": {
+          "detected": 0,
+          "flows": 17,
+          "recall": 0.0
+        },
+        "AsyncRAT + XWorm": {
+          "detected": 0,
+          "flows": 12,
+          "recall": 0.0
+        },
+        "SSLoad + Cobalt Strike": {
+          "detected": 0,
+          "flows": 12,
+          "recall": 0.0
+        },
+        "Emotet": {
+          "detected": 0,
+          "flows": 7,
+          "recall": 0.0
+        },
+        "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "nDPI malware sample": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "AsyncRAT": {
+          "detected": 0,
+          "flows": 3,
+          "recall": 0.0
+        },
+        "Remcos RAT": {
+          "detected": 0,
+          "flows": 3,
+          "recall": 0.0
+        },
+        "DNS exfiltration": {
+          "detected": 0,
+          "flows": 2,
+          "recall": 0.0
+        },
+        "chisel tunnel": {
+          "detected": 1,
+          "flows": 2,
+          "recall": 0.5
+        },
+        "Redline Stealer": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "NetSupport RAT": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "XWorm": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "Emotet (DGA)": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "iodine DNS tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "dns2tcp tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "ICMP tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "TrickBot": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        }
+      },
+      "captures_with_malicious_flows": 28,
+      "captures_detected": 3,
+      "captures_missed": [
+        "mta:2023-07-12",
+        "mta:2023-10-03",
+        "mta:2023-10-31",
+        "mta:2023-12-18",
+        "mta:2024-01-09",
+        "mta:2024-03-14",
+        "mta:2024-03-19",
+        "mta:2024-04-18",
+        "mta:2024-06-12",
+        "mta:2024-06-25",
+        "mta:2024-09-19",
+        "mta:2024-12-17",
+        "mta:2025-01-31",
+        "mta:2025-03-10",
+        "mta:2025-11-19",
+        "ndpi:Emotet_infection_url_dga_negative",
+        "ndpi:Emotet_infection_url_dga_positive",
+        "ndpi:dns-exf",
+        "ndpi:dns-tunnel-iodine",
+        "ndpi:dns2tcp_tunnel",
+        "ndpi:dns_exfiltration",
+        "ndpi:emotet",
+        "ndpi:icmp-tunnel",
+        "ndpi:malware",
+        "ndpi:trickbot"
+      ],
+      "benign_fpr_by_source": {
+        "mta_background": {
+          "false_alerts": 1,
+          "flows": 1929,
+          "fpr": 0.0005184033177812338
+        },
+        "ndpi": {
+          "false_alerts": 121,
+          "flows": 5839,
+          "fpr": 0.020722726494262718
+        },
+        "repo": {
+          "false_alerts": 0,
+          "flows": 4,
+          "fpr": 0.0
+        }
+      }
+    },
+    "max(lgbm_cal, iforest)": {
+      "metrics": {
+        "tp": 802,
+        "fp": 248,
+        "fn": 1023,
+        "tn": 7524,
+        "precision": 0.7638095238095238,
+        "recall": 0.43945205479452054,
+        "fpr": 0.0319094184251158,
+        "roc_auc": 0.9243763351405467,
+        "pr_auc": 0.6637907057578271
+      },
+      "family_recall": {
+        "Gozi/ISFB + Cobalt Strike": {
+          "detected": 276,
+          "flows": 903,
+          "recall": 0.30564784053156147
+        },
+        "Pikabot + Cobalt Strike": {
+          "detected": 250,
+          "flows": 465,
+          "recall": 0.5376344086021505
+        },
+        "Latrodectus + BackConnect + Keyhole VNC": {
+          "detected": 134,
+          "flows": 165,
+          "recall": 0.8121212121212121
+        },
+        "Qakbot + Cobalt Strike + VNC": {
+          "detected": 86,
+          "flows": 91,
+          "recall": 0.945054945054945
+        },
+        "DarkGate": {
+          "detected": 3,
+          "flows": 68,
+          "recall": 0.04411764705882353
+        },
+        "KoiLoader/KoiStealer": {
+          "detected": 12,
+          "flows": 30,
+          "recall": 0.4
+        },
+        "Lumma Stealer": {
+          "detected": 12,
+          "flows": 29,
+          "recall": 0.41379310344827586
+        },
+        "IcedID": {
+          "detected": 14,
+          "flows": 17,
+          "recall": 0.8235294117647058
+        },
+        "AsyncRAT + XWorm": {
+          "detected": 1,
+          "flows": 12,
+          "recall": 0.08333333333333333
+        },
+        "SSLoad + Cobalt Strike": {
+          "detected": 7,
+          "flows": 12,
+          "recall": 0.5833333333333334
+        },
+        "Emotet": {
+          "detected": 2,
+          "flows": 7,
+          "recall": 0.2857142857142857
+        },
+        "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "nDPI malware sample": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "AsyncRAT": {
+          "detected": 2,
+          "flows": 3,
+          "recall": 0.6666666666666666
+        },
+        "Remcos RAT": {
+          "detected": 0,
+          "flows": 3,
+          "recall": 0.0
+        },
+        "DNS exfiltration": {
+          "detected": 0,
+          "flows": 2,
+          "recall": 0.0
+        },
+        "chisel tunnel": {
+          "detected": 1,
+          "flows": 2,
+          "recall": 0.5
+        },
+        "Redline Stealer": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "NetSupport RAT": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "XWorm": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "Emotet (DGA)": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "iodine DNS tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "dns2tcp tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "ICMP tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "TrickBot": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        }
+      },
+      "captures_with_malicious_flows": 28,
+      "captures_detected": 16,
+      "captures_missed": [
+        "mta:2024-12-17",
+        "mta:2025-01-31",
+        "mta:2025-03-10",
+        "ndpi:Emotet_infection_url_dga_negative",
+        "ndpi:Emotet_infection_url_dga_positive",
+        "ndpi:dns-exf",
+        "ndpi:dns-tunnel-iodine",
+        "ndpi:dns2tcp_tunnel",
+        "ndpi:dns_exfiltration",
+        "ndpi:icmp-tunnel",
+        "ndpi:malware",
+        "ndpi:trickbot"
+      ],
+      "benign_fpr_by_source": {
+        "mta_background": {
+          "false_alerts": 37,
+          "flows": 1929,
+          "fpr": 0.01918092275790565
+        },
+        "ndpi": {
+          "false_alerts": 211,
+          "flows": 5839,
+          "fpr": 0.03613632471313581
+        },
+        "repo": {
+          "false_alerts": 0,
+          "flows": 4,
+          "fpr": 0.0
+        }
+      }
+    },
+    "phase2_heuristic": {
+      "metrics": {
+        "tp": 0,
+        "fp": 9,
+        "fn": 1825,
+        "tn": 7763,
+        "precision": 0.0,
+        "recall": 0.0,
+        "fpr": 0.0011580030880082347,
+        "roc_auc": 0.6970551117816679,
+        "pr_auc": 0.28396512448505906
+      },
+      "family_recall": {
+        "Gozi/ISFB + Cobalt Strike": {
+          "detected": 0,
+          "flows": 903,
+          "recall": 0.0
+        },
+        "Pikabot + Cobalt Strike": {
+          "detected": 0,
+          "flows": 465,
+          "recall": 0.0
+        },
+        "Latrodectus + BackConnect + Keyhole VNC": {
+          "detected": 0,
+          "flows": 165,
+          "recall": 0.0
+        },
+        "Qakbot + Cobalt Strike + VNC": {
+          "detected": 0,
+          "flows": 91,
+          "recall": 0.0
+        },
+        "DarkGate": {
+          "detected": 0,
+          "flows": 68,
+          "recall": 0.0
+        },
+        "KoiLoader/KoiStealer": {
+          "detected": 0,
+          "flows": 30,
+          "recall": 0.0
+        },
+        "Lumma Stealer": {
+          "detected": 0,
+          "flows": 29,
+          "recall": 0.0
+        },
+        "IcedID": {
+          "detected": 0,
+          "flows": 17,
+          "recall": 0.0
+        },
+        "AsyncRAT + XWorm": {
+          "detected": 0,
+          "flows": 12,
+          "recall": 0.0
+        },
+        "SSLoad + Cobalt Strike": {
+          "detected": 0,
+          "flows": 12,
+          "recall": 0.0
+        },
+        "Emotet": {
+          "detected": 0,
+          "flows": 7,
+          "recall": 0.0
+        },
+        "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "nDPI malware sample": {
+          "detected": 0,
+          "flows": 4,
+          "recall": 0.0
+        },
+        "AsyncRAT": {
+          "detected": 0,
+          "flows": 3,
+          "recall": 0.0
+        },
+        "Remcos RAT": {
+          "detected": 0,
+          "flows": 3,
+          "recall": 0.0
+        },
+        "DNS exfiltration": {
+          "detected": 0,
+          "flows": 2,
+          "recall": 0.0
+        },
+        "chisel tunnel": {
+          "detected": 0,
+          "flows": 2,
+          "recall": 0.0
+        },
+        "Redline Stealer": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "NetSupport RAT": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "XWorm": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "Emotet (DGA)": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "iodine DNS tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "dns2tcp tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "ICMP tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "TrickBot": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        }
+      },
+      "captures_with_malicious_flows": 28,
+      "captures_detected": 0,
+      "captures_missed": [
+        "mta:2023-05-10",
+        "mta:2023-07-12",
+        "mta:2023-10-03",
+        "mta:2023-10-31",
+        "mta:2023-12-18",
+        "mta:2024-01-09",
+        "mta:2024-03-14",
+        "mta:2024-03-19",
+        "mta:2024-04-18",
+        "mta:2024-06-12",
+        "mta:2024-06-25",
+        "mta:2024-09-19",
+        "mta:2024-10-23",
+        "mta:2024-12-17",
+        "mta:2025-01-31",
+        "mta:2025-03-10",
+        "mta:2025-11-19",
+        "ndpi:Emotet_infection_url_dga_negative",
+        "ndpi:Emotet_infection_url_dga_positive",
+        "ndpi:dns-exf",
+        "ndpi:dns-tunnel-iodine",
+        "ndpi:dns2tcp_tunnel",
+        "ndpi:dns_exfiltration",
+        "ndpi:emotet",
+        "ndpi:icmp-tunnel",
+        "ndpi:malware",
+        "ndpi:trickbot",
+        "ndpi:websocket-chisel-ssh"
+      ],
+      "benign_fpr_by_source": {
+        "mta_background": {
+          "false_alerts": 0,
+          "flows": 1929,
+          "fpr": 0.0
+        },
+        "ndpi": {
+          "false_alerts": 9,
+          "flows": 5839,
+          "fpr": 0.0015413598218873095
+        },
+        "repo": {
+          "false_alerts": 0,
+          "flows": 4,
+          "fpr": 0.0
+        }
+      }
+    },
+    "ndpi_risk_only": {
+      "metrics": {
+        "tp": 1679,
+        "fp": 3816,
+        "fn": 146,
+        "tn": 3956,
+        "precision": 0.3055505004549591,
+        "recall": 0.92,
+        "fpr": 0.4909933093154915,
+        "roc_auc": 0.7145033453422542,
+        "pr_auc": 0.29631954784171544
+      },
+      "family_recall": {
+        "Gozi/ISFB + Cobalt Strike": {
+          "detected": 892,
+          "flows": 903,
+          "recall": 0.9878183831672204
+        },
+        "Pikabot + Cobalt Strike": {
+          "detected": 463,
+          "flows": 465,
+          "recall": 0.9956989247311828
+        },
+        "Latrodectus + BackConnect + Keyhole VNC": {
+          "detected": 142,
+          "flows": 165,
+          "recall": 0.8606060606060606
+        },
+        "Qakbot + Cobalt Strike + VNC": {
+          "detected": 80,
+          "flows": 91,
+          "recall": 0.8791208791208791
+        },
+        "DarkGate": {
+          "detected": 0,
+          "flows": 68,
+          "recall": 0.0
+        },
+        "KoiLoader/KoiStealer": {
+          "detected": 26,
+          "flows": 30,
+          "recall": 0.8666666666666667
+        },
+        "Lumma Stealer": {
+          "detected": 18,
+          "flows": 29,
+          "recall": 0.6206896551724138
+        },
+        "IcedID": {
+          "detected": 13,
+          "flows": 17,
+          "recall": 0.7647058823529411
+        },
+        "AsyncRAT + XWorm": {
+          "detected": 10,
+          "flows": 12,
+          "recall": 0.8333333333333334
+        },
+        "SSLoad + Cobalt Strike": {
+          "detected": 12,
+          "flows": 12,
+          "recall": 1.0
+        },
+        "Emotet": {
+          "detected": 4,
+          "flows": 7,
+          "recall": 0.5714285714285714
+        },
+        "AgentTesla-style exfil (FTP) / VIP Recovery exfil (SMTP)": {
+          "detected": 1,
+          "flows": 4,
+          "recall": 0.25
+        },
+        "nDPI malware sample": {
+          "detected": 1,
+          "flows": 4,
+          "recall": 0.25
+        },
+        "AsyncRAT": {
+          "detected": 3,
+          "flows": 3,
+          "recall": 1.0
+        },
+        "Remcos RAT": {
+          "detected": 3,
+          "flows": 3,
+          "recall": 1.0
+        },
+        "DNS exfiltration": {
+          "detected": 2,
+          "flows": 2,
+          "recall": 1.0
+        },
+        "chisel tunnel": {
+          "detected": 2,
+          "flows": 2,
+          "recall": 1.0
+        },
+        "Redline Stealer": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "NetSupport RAT": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "XWorm": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "Emotet (DGA)": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "iodine DNS tunnel": {
+          "detected": 0,
+          "flows": 1,
+          "recall": 0.0
+        },
+        "dns2tcp tunnel": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "ICMP tunnel": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        },
+        "TrickBot": {
+          "detected": 1,
+          "flows": 1,
+          "recall": 1.0
+        }
+      },
+      "captures_with_malicious_flows": 28,
+      "captures_detected": 26,
+      "captures_missed": [
+        "mta:2024-03-19",
+        "ndpi:dns-tunnel-iodine"
+      ],
+      "benign_fpr_by_source": {
+        "mta_background": {
+          "false_alerts": 341,
+          "flows": 1929,
+          "fpr": 0.1767755313634007
+        },
+        "ndpi": {
+          "false_alerts": 3474,
+          "flows": 5839,
+          "fpr": 0.5949648912485015
+        },
+        "repo": {
+          "false_alerts": 1,
+          "flows": 4,
+          "fpr": 0.25
+        }
+      }
+    }
+  },
+  "class_balance": false,
+  "seed_spread": {
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "lgbm_calibrated": {
+      "recall": {
+        "mean": 0.452054794520548,
+        "std": 0.04174752771790599,
+        "min": 0.38904109589041097,
+        "max": 0.5117808219178083,
+        "values": [
+          0.4383561643835616,
+          0.5117808219178083,
+          0.4810958904109589,
+          0.38904109589041097,
+          0.44
+        ]
+      },
+      "precision": {
+        "mean": 0.9069555647984782,
+        "std": 0.03056238898023472,
+        "min": 0.8629989212513485,
+        "max": 0.9340425531914893,
+        "values": [
+          0.8629989212513485,
+          0.8769953051643192,
+          0.9340425531914893,
+          0.9281045751633987,
+          0.9326364692218351
+        ]
+      },
+      "fpr": {
+        "mean": 0.01114256304683479,
+        "std": 0.004466506183973266,
+        "min": 0.007076685537828101,
+        "max": 0.016855378281008748,
+        "values": [
+          0.01634071024189398,
+          0.016855378281008748,
+          0.00797735460627895,
+          0.007076685537828101,
+          0.007462686567164179
+        ]
+      },
+      "roc_auc": {
+        "mean": 0.9802784847608909,
+        "std": 0.0012675151714978009,
+        "min": 0.9787546443502845,
+        "max": 0.9821451786885131,
+        "values": [
+          0.9787546443502845,
+          0.9803795148019938,
+          0.9810855265477055,
+          0.9790275594159576,
+          0.9821451786885131
+        ]
+      },
+      "pr_auc": {
+        "mean": 0.9047202020286507,
+        "std": 0.007231121985806966,
+        "min": 0.892776167036189,
+        "max": 0.9135685678104225,
+        "values": [
+          0.892776167036189,
+          0.9094185017191856,
+          0.9135685678104225,
+          0.9009919562506574,
+          0.9068458173267985
+        ]
+      }
+    }
+  },
+  "alert_rules": {
+    "any_risk OR ml (Phase 2 spec)": {
+      "tp": 1696,
+      "fp": 3829,
+      "fn": 129,
+      "tn": 3943,
+      "precision": 0.3069683257918552,
+      "recall": 0.9293150684931507,
+      "fpr": 0.4926659804426145,
+      "roc_auc": 0.718324544025268,
+      "pr_auc": 0.2987119912399018,
+      "fpr_mta_background": 0.17988595127008813
+    },
+    "severe_risk OR ml": {
+      "tp": 867,
+      "fp": 181,
+      "fn": 958,
+      "tn": 7591,
+      "precision": 0.8272900763358778,
+      "recall": 0.47506849315068495,
+      "fpr": 0.023288728769943385,
+      "roc_auc": 0.7258898821903708,
+      "pr_auc": 0.4928423112742269,
+      "fpr_mta_background": 0.0352514256091239
+    },
+    "ml only": {
+      "tp": 800,
+      "fp": 127,
+      "fn": 1025,
+      "tn": 7645,
+      "precision": 0.8629989212513485,
+      "recall": 0.4383561643835616,
+      "fpr": 0.01634071024189398,
+      "roc_auc": 0.7110077270708338,
+      "pr_auc": 0.4851051066357411,
+      "fpr_mta_background": 0.01918092275790565
+    }
+  },
+  "lgbm_calibration": {
+    "raw_threshold": 0.3297864007152475,
+    "maps_to": 0.8,
+    "fpr_budget": 0.01,
+    "fit_on": "median over 5 CV seeds of the 1%-OOF-FPR threshold",
+    "per_seed_raw_thresholds": [
+      0.3759146602297522,
+      0.4510116330359985,
+      0.3297864007152475,
+      0.26747091178904486,
+      0.3188242439474946
+    ]
+  }
+}
