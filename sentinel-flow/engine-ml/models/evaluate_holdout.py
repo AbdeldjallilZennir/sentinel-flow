@@ -83,7 +83,7 @@ def run_pipeline(pcap, risk_policy, tmp):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--risk-policy", default="any", choices=["any", "severe", "none"])
+    ap.add_argument("--risk-policy", default="severe", choices=["any", "severe", "none"])
     args = ap.parse_args()
     labels = json.load(open(LABELS))
     meta = json.load(open(os.path.join(HERE, "model_meta.json")))

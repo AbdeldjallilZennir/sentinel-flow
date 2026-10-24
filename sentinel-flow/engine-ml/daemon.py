@@ -571,11 +571,14 @@ def main():
                     help="rows per write (README: 1,000 rows or 1 s)")
     ap.add_argument("--scorer", choices=["auto", "onnx", "heuristic"], default="auto")
     ap.add_argument("--models-dir", default=MODELS_DIR)
-    ap.add_argument("--alert-risk-policy", choices=["any", "severe", "none"], default="any",
-                    help="which nDPI risks raise is_alert on their own (see part3.md)")
+    ap.add_argument("--alert-risk-policy", choices=["any", "severe", "none"], default="severe",
+                    help="which nDPI risks raise is_alert on their own (default severe; "
+                         "'any' is the Phase 2 rule, which fires on ~18%% of benign flows, "
+                         "see Part3.md section 8.4)")
     mg = ap.add_argument_group("Phase 4 mitigation (see mitigator.py)")
     mg.add_argument("--mitigate", choices=["none", "dry-run", "nftables"], default="none",
-                    help="block remote C2 endpoints: score >= 0.80 (trained model) or severe nDPI risk")
+                    help="block remote endpoints per IP: one flow >= --block-high-score, "
+                         "--block-repeat flows >= 0.80, severe nDPI risk, or a scan (see mitigator.py)")
     mg.add_argument("--mitigate-netns", help="apply nftables inside this network namespace")
     mg.add_argument("--block-timeout", type=int, default=900, help="seconds (default 15 min)")
     mg.add_argument("--protected-cidr", action="append",
@@ -586,6 +589,20 @@ def main():
     mg.add_argument("--allowlist-file", help="file of IPs/CIDRs never blocked (one per line, # comments)")
     mg.add_argument("--no-severe-risk-blocks", action="store_true",
                     help="block on the ML score only")
+    mg.add_argument("--block-high-score", type=float, default=0.95,
+                    help="one flow at or above this score blocks its remote IP (default 0.95)")
+    mg.add_argument("--block-repeat", type=int, default=2,
+                    help="flows >= 0.80 to one remote IP that block it (default 2; "
+                         "1 with --block-high-score 0.80 = old per-flow rule)")
+    mg.add_argument("--block-repeat-window", type=float, default=3600,
+                    help="seconds in which --block-repeat flows must occur (default 3600)")
+    mg.add_argument("--scan-ports", type=int, default=50,
+                    help="distinct ports on one host from one source within --scan-window "
+                         "that count as a port scan (default 50; 0 = off)")
+    mg.add_argument("--sweep-hosts", type=int, default=100,
+                    help="distinct hosts on one port from one source (short flows) within "
+                         "--scan-window that count as a host sweep (default 100; 0 = off)")
+    mg.add_argument("--scan-window", type=float, default=60, help="seconds (default 60)")
     mg.add_argument("--mitigations-jsonl", default=os.path.join(DEFAULT_DATA, "mitigations.jsonl"))
     ap.add_argument("--flush-interval", type=float, default=1.0,
                     help="seconds before a partial batch is written")
@@ -612,7 +629,10 @@ def main():
             protected_cidrs=args.protected_cidr or mg_mod.DEFAULT_PROTECTED,
             allowlist=args.allowlist, allow_private_blocks=args.allow_private_blocks,
             use_severe_risk=not args.no_severe_risk_blocks,
-            allowlist_file=args.allowlist_file)
+            allowlist_file=args.allowlist_file,
+            high_threshold=args.block_high_score, repeat_count=args.block_repeat,
+            repeat_window_s=args.block_repeat_window, scan_ports=args.scan_ports,
+            sweep_hosts=args.sweep_hosts, scan_window_s=args.scan_window)
         sinks = [mg_mod.JsonlEventSink(args.mitigations_jsonl)]
         if args.backend in ("auto", "sqlite", "both"):
             sinks.append(mg_mod.SqliteEventSink(args.db))
@@ -623,7 +643,10 @@ def main():
                                args.block_timeout, sinks, log_fn=log)
         log(f"mitigation: backend={args.mitigate}"
             f"{' netns=' + args.mitigate_netns if args.mitigate_netns else ''} "
-            f"timeout={args.block_timeout}s protected="
+            f"timeout={args.block_timeout}s rule=score>={policy.high_threshold:.2f}|"
+            f"{policy.repeat_count}x>={policy.threshold:.2f}/{args.block_repeat_window:g}s"
+            f"{'|severe' if policy.use_severe_risk else ''}"
+            f"|scan>={policy.scan_ports}ports,{policy.sweep_hosts}hosts/{args.scan_window:g}s protected="
             f"{','.join(str(n) for n in policy.protected) or 'none'} "
             f"allowlist={','.join(str(n) for n in policy.allowlist) or 'none'} "
             f"sinks={','.join(type(x).__name__ for x in sinks)}")
