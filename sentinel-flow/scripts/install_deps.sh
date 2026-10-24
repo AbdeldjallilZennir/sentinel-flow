@@ -17,6 +17,9 @@
 #   --ndpi-ref REF    nDPI commit to build (default: the commit the project was verified with)
 #   --skip-tests      don't run the test suites at the end
 #
+# Non-interactive use (e.g. over ssh without a terminal): set SUDO_ASKPASS to a
+# program that prints the sudo password; the script then uses "sudo -A".
+#
 # What it does:
 #   1. apt: compiler toolchain, cmake, libpcap, libzmq, Python venv, nftables, iproute2
 #   2. clones nDPI, checks out the pinned commit, builds libndpi
@@ -40,7 +43,7 @@ while [[ $# -gt 0 ]]; do
         --ndpi-dir)      NDPI_DIR=$2; shift ;;
         --ndpi-ref)      NDPI_REF=$2; shift ;;
         --skip-tests)    RUN_TESTS=0 ;;
-        -h|--help)       sed -n '2,29p' "$0"; exit 0 ;;
+        -h|--help)       sed -n '2,32p' "$0"; exit 0 ;;
         *) echo "unknown option: $1 (see --help)"; exit 2 ;;
     esac
     shift
@@ -68,6 +71,7 @@ if [[ $EUID -eq 0 ]]; then
 else
     command -v sudo >/dev/null || die "sudo is required to install packages"
     SUDO="sudo"
+    [[ -n "${SUDO_ASKPASS:-}" ]] && SUDO="sudo -A"
 fi
 export DEBIAN_FRONTEND=noninteractive
 APT="$SUDO env DEBIAN_FRONTEND=noninteractive apt-get"
