@@ -120,7 +120,11 @@ if [[ "$(git -C "$NDPI_DIR" rev-parse --short=9 HEAD)" != "${NDPI_REF:0:9}" ]]; 
     git -C "$NDPI_DIR" checkout --quiet "$NDPI_REF"
 fi
 if [[ ! -f "$NDPI_DIR/src/lib/libndpi.so" ]]; then
-    ( cd "$NDPI_DIR" && ./autogen.sh >/dev/null && make -C src/lib -j"$(nproc)" >/dev/null )
+    # At the pinned commit autogen.sh only regenerates the build system; it
+    # does not run configure, so do that when no Makefile was produced.
+    ( cd "$NDPI_DIR" && ./autogen.sh >/dev/null \
+        && { [[ -f Makefile ]] || ./configure >/dev/null; } \
+        && make -C src/lib -j"$(nproc)" >/dev/null )
 fi
 [[ -f "$NDPI_DIR/src/lib/libndpi.so" ]] || die "libndpi build failed"
 echo "libndpi: $(ls "$NDPI_DIR"/src/lib/libndpi.so.*.*.* 2>/dev/null | head -1)"
