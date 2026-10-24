@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -147,7 +148,12 @@ static void emit_flow(flow_entry_t *entry)
     /* nDPI fields */
     cJSON_AddStringToObject(root, "app_protocol",   proto_name);
     cJSON_AddStringToObject(root, "ja4_client",     ja4);
-    cJSON_AddNumberToObject(root, "ndpi_risk_mask", (double)risk);
+    /* The risk mask uses all 64 bits (e.g. "Probing Attempt" is bit 55).
+     * A double holds integers exactly only up to 2^53, so printing it as
+     * a cJSON number corrupted the low bits; print the exact integer. */
+    char risk_num[24];
+    snprintf(risk_num, sizeof(risk_num), "%" PRIu64, (uint64_t)risk);
+    cJSON_AddRawToObject(root, "ndpi_risk_mask", risk_num);
     cJSON_AddStringToObject(root, "ndpi_risk_str",  risk_str);
 
     /* Counters */

@@ -52,6 +52,7 @@ cJSON *cJSON_CreateString(const char *string);
 cJSON *cJSON_CreateNumber(double num);
 cJSON *cJSON_CreateBool(int boolean);
 cJSON *cJSON_CreateNull(void);
+cJSON *cJSON_CreateRaw(const char *raw);
 
 /* ── Tree mutation ───────────────────────────────────────────────── */
 void   cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
@@ -60,6 +61,7 @@ void   cJSON_AddItemToArray(cJSON *array, cJSON *item);
 /* Convenience helpers (return the added item, or NULL on failure). */
 cJSON *cJSON_AddStringToObject(cJSON *object, const char *name, const char *value);
 cJSON *cJSON_AddNumberToObject(cJSON *object, const char *name, double value);
+cJSON *cJSON_AddRawToObject(cJSON *object, const char *name, const char *raw);
 cJSON *cJSON_AddBoolToObject(cJSON *object, const char *name, int boolean);
 
 /* ── Querying ────────────────────────────────────────────────────── */

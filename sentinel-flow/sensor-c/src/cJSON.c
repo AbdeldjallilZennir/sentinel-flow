@@ -92,6 +92,19 @@ cJSON *cJSON_CreateString(const char *string)
     return item;
 }
 
+/* Pre-formatted JSON text, printed verbatim. Used for integers that a
+ * double cannot hold exactly (> 2^53), e.g. the 64-bit nDPI risk mask. */
+cJSON *cJSON_CreateRaw(const char *raw)
+{
+    cJSON *item = cJSON_New_Item();
+    if (item) {
+        item->type        = cJSON_Raw;
+        item->valuestring = cJSON_strdup(raw ? raw : "");
+        if (!item->valuestring) { cJSON_Delete(item); return NULL; }
+    }
+    return item;
+}
+
 cJSON *cJSON_CreateNumber(double num)
 {
     cJSON *item = cJSON_New_Item();
@@ -166,6 +179,14 @@ cJSON *cJSON_AddStringToObject(cJSON *object, const char *name, const char *valu
     if (!str) return NULL;
     cJSON_AddItemToObject(object, name, str);
     return str;
+}
+
+cJSON *cJSON_AddRawToObject(cJSON *object, const char *name, const char *raw)
+{
+    cJSON *r = cJSON_CreateRaw(raw);
+    if (!r) return NULL;
+    cJSON_AddItemToObject(object, name, r);
+    return r;
 }
 
 cJSON *cJSON_AddNumberToObject(cJSON *object, const char *name, double value)

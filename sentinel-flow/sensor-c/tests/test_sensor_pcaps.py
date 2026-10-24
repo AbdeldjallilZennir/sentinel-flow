@@ -14,6 +14,7 @@ it lives in main.c's packet loop:
   * no flow loss over ZMQ when the consumer stalls during a burst
   * microsecond precision of flow_duration_ms on long flows
   * active-timeout snapshots (-A) of flows that never go idle
+  * exact 64-bit nDPI risk mask (bits >= 53 used to be corrupted)
 
 Usage:  python3 sensor-c/tests/test_sensor_pcaps.py
 """
@@ -215,6 +216,20 @@ class SensorPcapTests(unittest.TestCase):
                                capture_output=True, text=True, env=ENV)
             self.assertEqual(p.returncode, 1, bad)
             self.assertIn("-A must be", p.stderr)
+
+    def test_risk_mask_is_exact_above_2_53(self):
+        # "TCP Connection Issues" is bit 50 and "Probing Attempt" bit 55.
+        # Printed through a double, 2^50 + 2^55 lost its low bits and
+        # showed up to 26 spurious risk bits (including "severe" ones).
+        path = os.path.join(NDPI_PCAPS, "tcp_scan.pcapng")
+        if not os.path.exists(path):
+            self.skipTest(f"nDPI corpus not found: {path}")
+        flows = [f for f in run_sensor(path)
+                 if f["ndpi_risk_str"] == "TCP Connection Issues, Probing Attempt"]
+        self.assertTrue(flows)
+        for f in flows:
+            self.assertIsInstance(f["ndpi_risk_mask"], int)
+            self.assertEqual(f["ndpi_risk_mask"], (1 << 50) | (1 << 55))
 
     def test_ja4_still_reported_for_tls(self):
         path = os.path.join(HERE, "..", "..", "pcaps", "test_tls_full.pcap")
