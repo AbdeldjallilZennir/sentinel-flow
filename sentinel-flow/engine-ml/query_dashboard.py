@@ -2,7 +2,7 @@
 """
 SentinelFlow Phase 2/3 — query dashboard (standard library only).
 
-Runs six panel queries against the ingested flows and prints them as
+Runs seven panel queries against the ingested flows and prints them as
 tables, or serves them as an auto-refreshing HTML page.
 
   ./query_dashboard.py                         # SQLite (engine-ml/data/...)
@@ -152,6 +152,29 @@ FROM sentinel.mitigations
 WHERE ip != '' AND action IN ('block', 'counters', 'expire', 'unblock')
 GROUP BY ip
 ORDER BY (status = 'active') DESC, dropped_pkts DESC, minIf(ts_us, action = 'block'), ip""",
+})
+
+PANELS.append({
+    "title": "6b. Recent Mitigation & Scan Events (incl. detections not blocked)",
+    "optional_table": "mitigation_events / sentinel.mitigations (daemon --mitigate ...)",
+    # skip_protected = a trigger fired but the address is protected (e.g. a
+    # LAN host running a port scan); it is never blocked, only reported here.
+    "sqlite": """\
+SELECT datetime(ts_us / 1000000, 'unixepoch') AS time,
+       CASE action WHEN 'skip_protected' THEN 'detected, not blocked' ELSE action END AS action,
+       reason, ip, detail, flow, ROUND(score, 3) AS score
+FROM mitigation_events
+WHERE action != 'counters'
+ORDER BY ts_us DESC
+LIMIT 50""",
+    "clickhouse": """\
+SELECT formatDateTime(toDateTime(intDiv(ts_us, 1000000), 'UTC'), '%Y-%m-%d %H:%i:%S') AS time,
+       if(action = 'skip_protected', 'detected, not blocked', action) AS action,
+       reason, ip, detail, flow, round(score, 3) AS score
+FROM sentinel.mitigations
+WHERE action != 'counters'
+ORDER BY ts_us DESC
+LIMIT 50""",
 })
 
 SUMMARY = {

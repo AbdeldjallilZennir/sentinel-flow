@@ -1,0 +1,25 @@
+# SentinelFlow default allowlist: addresses that are never blocked.
+# Use with:  daemon.py --mitigate ... --allowlist-file config/default_allowlist.txt
+#            (or mitigator.py --allowlist-file ... for manual blocks)
+# Format: one IPv4 address or CIDR per line; '#' starts a comment.
+#
+# This is a starting point, not a complete list. Add the cloud, CDN, SaaS
+# and resolver ranges your network depends on, and the hosts you run
+# scanners or monitoring from.
+#
+# Note: the first three entries were taken from false blocks on the holdout
+# captures (Part6.md). Holdout results measured WITH this file are therefore
+# not an independent test.
+
+# Microsoft: blocked on the 2025-12-29 holdout capture (model score >= 0.95)
+13.107.213.57/32    # Microsoft (13.107.0.0/16 is Microsoft-owned)
+20.190.135.18/32    # Microsoft, Entra ID (Azure AD) login range 20.190.128.0/18
+
+# Cloudflare-hosted IP lookup service, shared IP. Labeled "ambiguous" in the
+# holdout: malware uses it, but blocking it hits every site on that IP.
+172.67.74.152/32    # api.ipify.org (2024-02-21 holdout capture)
+
+# Public DNS resolvers
+1.1.1.1/32          # Cloudflare DNS
+8.8.8.8/32          # Google Public DNS
+9.9.9.9/32          # Quad9 DNS
