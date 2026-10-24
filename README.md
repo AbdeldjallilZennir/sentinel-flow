@@ -96,6 +96,15 @@ bash sentinel-flow/scripts/install_deps.sh --all      # + training venv, tshark/
 
 Run it as your normal user; it uses `sudo` only for `apt`. It clones nDPI to `~/nDPI` at the commit this project was verified with (`90eb617a4`), builds it and the sensor, creates `engine-ml/.venv-runtime`, and runs both test suites.
 
+Then capture live on one interface (dry-run by default; Ctrl+C stops everything cleanly):
+
+```bash
+cd sentinel-flow
+bash scripts/run_live.sh -i <interface> -a <your admin IP> --serve
+```
+
+For a two-machine VM lab (host-only network, dashboard over an SSH tunnel, optional Grafana), see [`sentinel-flow/docs/LAB_SETUP.md`](sentinel-flow/docs/LAB_SETUP.md).
+
 ### Prerequisites (manual setup)
 
 | Requirement | Notes |
