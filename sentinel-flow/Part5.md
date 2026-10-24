@@ -87,7 +87,8 @@ Commits since Part 4 (newest first):
 
 | Commit | Content |
 |---|---|
-| `0ffe7ec` | retrained model on exact risk masks (§5), local, not yet pushed |
+| `e6444c6` | this report |
+| `0ffe7ec` | retrained model on exact risk masks (§5) |
 | `d68a0e0` | sensor: exact 64-bit `ndpi_risk_mask` (§4) |
 | `afc7e1f` | README edit (project owner, on GitHub) |
 | `fa38185` | `run_live.sh` + `LAB_SETUP.md` |
@@ -200,7 +201,7 @@ All differences are within the seed spread. The new model has the same quality w
 ## 7. Open items
 
 1. **Revoke the GitHub token** that was pasted into the conversation.
-2. **Push `0ffe7ec`** (the new model) and `git pull` on the VMs so they use it.
+2. **`git pull` on the VMs** so they use the new model (`0ffe7ec`, pushed to GitHub).
 3. **For lab runs:** allowlist the machine you administer from, not the sensor VM. Private-to-private traffic is never blocked, so lab results show up as logged decisions.
 4. **Offline idle expiry** still runs only every 1,000 packets (`Part4.md` §1.3); unchanged to keep earlier results reproducible.
 5. `engine-ml/models/threshold_table.json` and the README metrics still describe the previous model. Re-run `threshold_table.py` if you want them for `2005d025`.
