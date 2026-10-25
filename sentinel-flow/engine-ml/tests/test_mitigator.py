@@ -134,6 +134,29 @@ class Policy(unittest.TestCase):
         self.assertEqual(self.p.why_protected("2001:db8::1"), "not IPv4")
         self.assertEqual(self.p.decide(rec(src="2001:db8::1", dst="2001:db8::2")).action, "skip")
 
+    def test_own_public_address_is_never_the_target(self):
+        # Inbound flow to a host whose own address is public: responder-first
+        # used to pick the host itself; the attacker must be blocked instead.
+        p = mitigator.BlockPolicy(own_addresses=["198.51.100.5"])
+        d = p.decide(rec(src="203.0.113.9", dst="198.51.100.5", score=0.97))
+        self.assertEqual((d.action, d.ip), ("block", "203.0.113.9"))
+        self.assertEqual(p.why_protected("198.51.100.5"), "this machine's own address")
+
+    def test_snapshots_of_one_connection_count_once(self):
+        # Live capture (-A 60) exports a long connection every 60 s with the
+        # same 5-tuple and first_seen_us. Two snapshots are one flow, not two.
+        def snap(sport, first_s, last_s):
+            r = rec(score=0.85)
+            r.update(src_port=sport, dst_port=443, protocol=6,
+                     first_seen_us=int(first_s * 1e6), last_seen_us=int(last_s * 1e6))
+            return r
+        self.assertEqual(self.p.decide(snap(50000, 100, 160)).action, "skip")
+        d = self.p.decide(snap(50000, 100, 220))                 # same connection, later
+        self.assertEqual((d.action, d.reason_code), ("skip", 0))
+        self.assertIn("1 flows", d.detail)
+        d = self.p.decide(snap(50001, 300, 301))                 # a second connection
+        self.assertEqual((d.action, d.reason), ("block", "ml_repeat"))
+
 
 def probe(src, dst, port, t_s, proto=6, pkts=2):
     """A scan probe as the sensor exports it (SYN + RST)."""
@@ -186,6 +209,31 @@ class Scans(unittest.TestCase):
         later = self.run_flows(probe("192.168.230.1", "192.168.230.128", port, 700 + port * 0.01)
                                for port in range(1, 61))
         self.assertEqual(len(later), 1)
+
+    def test_forged_scan_from_a_used_server_is_reported_not_blocked(self):
+        # The resolver answered a LAN host's DNS query; then "8.8.8.8" scans
+        # 60 ports. The source can be forged, so it is reported, not blocked.
+        dns = dict(probe("192.168.1.10", "8.8.8.8", 53, 1.0, proto=17), bytes_down=120)
+        self.assertEqual(self.p.decisions(dns), [])
+        ds = self.run_flows(probe("8.8.8.8", "192.168.1.10", port, 10 + port * 0.01)
+                            for port in range(1, 61))
+        self.assertEqual([(d.action, d.reason) for d in ds], [("skip", "scan")])
+        self.assertIn("the source may be forged", ds[0].detail)
+        # A server last used more than 24 h before the scan is blocked as usual.
+        p = mitigator.BlockPolicy()
+        p.decisions(dns)
+        day = 24 * 3600
+        ds = [d for port in range(1, 61)
+              for d in p.decisions(probe("8.8.8.8", "192.168.1.10", port, day + 10 + port * 0.01))]
+        self.assertEqual([(d.action, d.ip) for d in ds], [("block", "8.8.8.8")])
+
+    def test_unanswered_or_inbound_contact_does_not_protect_a_scanner(self):
+        # Only flows that a local host started AND the remote answered count.
+        self.p.decisions(probe("192.168.1.10", "198.51.100.66", 80, 1.0))          # no reply
+        self.p.decisions(dict(probe("198.51.100.66", "192.168.1.10", 22, 2.0), bytes_down=500))
+        ds = self.run_flows(probe("198.51.100.66", "192.168.1.10", port, 10 + port * 0.01)
+                            for port in range(1, 61))
+        self.assertEqual([(d.action, d.ip) for d in ds], [("block", "198.51.100.66")])
 
     def test_scans_can_be_disabled(self):
         p = mitigator.BlockPolicy(scan_ports=0, sweep_hosts=0)

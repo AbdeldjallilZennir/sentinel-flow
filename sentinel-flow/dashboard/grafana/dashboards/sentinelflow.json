@@ -56,7 +56,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT app_protocol, count() AS flows\nFROM sentinel.network_flows\nGROUP BY app_protocol\nORDER BY flows DESC"
+          "rawSql": "SELECT app_protocol, count() AS flows\nFROM (SELECT * FROM sentinel.network_flows  -- one row per connection: latest snapshot\n      ORDER BY last_seen_us DESC, pkt_count DESC, ingested_at_us DESC\n      LIMIT 1 BY src_ip, src_port, dst_ip, dst_port, protocol, first_seen_us)\nGROUP BY app_protocol\nORDER BY flows DESC"
         }
       ]
     },
@@ -97,7 +97,7 @@
           "editorType": "sql",
           "format": 0,
           "queryType": "timeseries",
-          "rawSql": "SELECT toDateTime(intDiv(first_seen_us, 1000000)) AS time,\n       sum(bytes_up) AS bytes_up, sum(bytes_down) AS bytes_down\nFROM sentinel.network_flows\nGROUP BY time\nORDER BY time"
+          "rawSql": "SELECT toDateTime(intDiv(first_seen_us, 1000000)) AS time,\n       sum(bytes_up) AS bytes_up, sum(bytes_down) AS bytes_down\nFROM (SELECT * FROM sentinel.network_flows  -- one row per connection: latest snapshot\n      ORDER BY last_seen_us DESC, pkt_count DESC, ingested_at_us DESC\n      LIMIT 1 BY src_ip, src_port, dst_ip, dst_port, protocol, first_seen_us)\nGROUP BY time\nORDER BY time"
         }
       ]
     },
@@ -125,7 +125,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT ja4_client, count() AS flows, uniqExact(dst_ip) AS servers,\n       arrayStringConcat(groupUniqArray(3)(app_protocol), ',') AS protocols,\n       round(max(ml_anomaly_score), 3) AS max_ml_score,\n       countIf(ml_anomaly_score >= 0.8) AS ml_alerts\nFROM sentinel.network_flows\nWHERE ja4_client NOT IN ('', 'N/A')\nGROUP BY ja4_client\nORDER BY max_ml_score DESC, flows DESC"
+          "rawSql": "SELECT ja4_client, count() AS flows, uniqExact(dst_ip) AS servers,\n       arrayStringConcat(groupUniqArray(3)(app_protocol), ',') AS protocols,\n       round(max(ml_anomaly_score), 3) AS max_ml_score,\n       countIf(ml_anomaly_score >= 0.8) AS ml_alerts\nFROM (SELECT * FROM sentinel.network_flows  -- one row per connection: latest snapshot\n      ORDER BY last_seen_us DESC, pkt_count DESC, ingested_at_us DESC\n      LIMIT 1 BY src_ip, src_port, dst_ip, dst_port, protocol, first_seen_us)\nWHERE ja4_client NOT IN ('', 'N/A')\nGROUP BY ja4_client\nORDER BY max_ml_score DESC, flows DESC"
         }
       ],
       "fieldConfig": {
@@ -267,7 +267,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT fromUnixTimestamp64Micro(toInt64(first_seen_us)) AS first_seen,\n       src_ip, src_port, dst_ip, dst_port, app_protocol,\n       ndpi_risk_str, round(ml_anomaly_score, 3) AS ml_anomaly_score,\n       round(ml_c2_proba, 3) AS c2_proba, ml_model\nFROM sentinel.network_flows\nWHERE is_alert = 1\nORDER BY ml_anomaly_score DESC, first_seen_us\nLIMIT 500"
+          "rawSql": "SELECT fromUnixTimestamp64Micro(toInt64(first_seen_us)) AS first_seen,\n       src_ip, src_port, dst_ip, dst_port, app_protocol,\n       ndpi_risk_str, round(ml_anomaly_score, 3) AS ml_anomaly_score,\n       round(ml_c2_proba, 3) AS c2_proba, ml_model\nFROM (SELECT * FROM sentinel.network_flows  -- one row per connection: latest snapshot\n      ORDER BY last_seen_us DESC, pkt_count DESC, ingested_at_us DESC\n      LIMIT 1 BY src_ip, src_port, dst_ip, dst_port, protocol, first_seen_us)\nWHERE is_alert = 1\nORDER BY ml_anomaly_score DESC, first_seen_us\nLIMIT 500"
         }
       ]
     },
@@ -380,7 +380,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT concat(src_ip, ' -> ', dst_ip, ':', toString(dst_port)) AS flow,\n       app_protocol, count() AS flows, round(max(ml_anomaly_score), 3) AS score,\n       round(max(ml_c2_proba), 3) AS c2_proba, round(max(ml_iforest_score), 3) AS iforest,\n       any(ml_model) AS model\nFROM sentinel.network_flows\nWHERE ml_anomaly_score >= 0.8\nGROUP BY src_ip, dst_ip, dst_port, app_protocol\nORDER BY score DESC, flows DESC\nLIMIT 100"
+          "rawSql": "SELECT concat(src_ip, ' -> ', dst_ip, ':', toString(dst_port)) AS flow,\n       app_protocol, count() AS flows, round(max(ml_anomaly_score), 3) AS score,\n       round(max(ml_c2_proba), 3) AS c2_proba, round(max(ml_iforest_score), 3) AS iforest,\n       any(ml_model) AS model\nFROM (SELECT * FROM sentinel.network_flows  -- one row per connection: latest snapshot\n      ORDER BY last_seen_us DESC, pkt_count DESC, ingested_at_us DESC\n      LIMIT 1 BY src_ip, src_port, dst_ip, dst_port, protocol, first_seen_us)\nWHERE ml_anomaly_score >= 0.8\nGROUP BY src_ip, dst_ip, dst_port, app_protocol\nORDER BY score DESC, flows DESC\nLIMIT 100"
         }
       ]
     },

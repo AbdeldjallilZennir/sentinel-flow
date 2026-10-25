@@ -12,7 +12,8 @@ Policy (decisions() / decide()), decided per remote IP, not per flow:
                      (default 0.95), from a trained model
       - ml_repeat:   repeat_count flows (default 2) to the same remote IP
                      with ml_anomaly_score >= threshold (default 0.80)
-                     within repeat_window_s (default 1 h)
+                     within repeat_window_s (default 1 h). Active-timeout
+                     snapshots of one connection count as one flow.
       - severe_risk: ndpi_risk_mask has a "severe" bit (features.SEVERE_MASK:
                      DGA domain, risky domain, malicious fingerprint,
                      malicious cert SHA-1, possible exploit, malware host)
@@ -30,6 +31,12 @@ Policy (decisions() / decide()), decided per remote IP, not per flow:
               (default 60 s). Benign training traffic peaks at 9 ports and
               40 hosts; the lab nmap session reached 1,000 ports.
               Fires at most once per (source, target) per scan_cooldown_s.
+              The source address of a scan can be forged, so a scan "from"
+              a server this network used within peer_memory_s (default
+              24 h: a local host started a flow to it and it answered) is
+              reported, not blocked. Otherwise anyone could cut the network
+              off from its DNS resolver; a forged scan returns no results
+              to the attacker. All other scanners are blocked at once.
     Time comes from the flow timestamps, so PCAP replays behave like live.
   * Target: the remote peer, never a protected address. For ML / severe
     triggers the responder (dst_ip) is preferred; src_ip is used only if
@@ -38,7 +45,8 @@ Policy (decisions() / decide()), decided per remote IP, not per flow:
     is still audited as skip_protected).
   * Protected addresses:
       - always (cannot be disabled): loopback, link-local, multicast,
-        unspecified, reserved, broadcast
+        unspecified, reserved, broadcast, and this machine's own addresses
+        (the daemon reads them with `ip addr`, also when they are public)
       - by default: RFC 1918 + 127.0.0.0/8 (--protected-cidr), so a LAN
         victim's own address is never blocked
       - --allow-private-blocks removes the RFC 1918 ranges (lab use)
@@ -71,6 +79,7 @@ SWEEP_HOSTS = 100
 SWEEP_MAX_PKTS = 3
 SCAN_WINDOW_S = 60
 SCAN_COOLDOWN_S = 600
+PEER_MEMORY_S = 24 * 3600   # how long a server this network used stays "known"
 RFC1918 = ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
 DEFAULT_PROTECTED = RFC1918 + ("127.0.0.0/8",)
 UNTRUSTED_SCORERS = {"", "heuristic_v1"}
@@ -135,6 +144,20 @@ def load_allowlist_file(path):
     return nets
 
 
+def local_ipv4_addresses(netns=None):
+    """This machine's IPv4 addresses (all interfaces), from `ip -j addr`.
+    Raises OSError / ValueError / subprocess.CalledProcessError on failure."""
+    cmd = ["ip", "-j", "-4", "addr", "show"]
+    if netns:
+        cmd = ["ip", "-n", netns] + cmd[1:]
+        if os.geteuid() != 0:
+            cmd = ["sudo", "-n"] + cmd
+    out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
+    return sorted({a["local"] for iface in json.loads(out)
+                   for a in iface.get("addr_info", [])
+                   if a.get("family") == "inet" and a.get("local")})
+
+
 def parse_networks(items):
     """'a.b.c.d', 'a.b.c.d/n' or comma-separated lists -> list of networks."""
     nets = []
@@ -173,7 +196,8 @@ class BlockPolicy:
                  high_threshold=HIGH_THRESHOLD, repeat_count=REPEAT_COUNT,
                  repeat_window_s=REPEAT_WINDOW_S, scan_ports=SCAN_PORTS,
                  sweep_hosts=SWEEP_HOSTS, scan_window_s=SCAN_WINDOW_S,
-                 scan_cooldown_s=SCAN_COOLDOWN_S, sweep_max_pkts=SWEEP_MAX_PKTS):
+                 scan_cooldown_s=SCAN_COOLDOWN_S, sweep_max_pkts=SWEEP_MAX_PKTS,
+                 own_addresses=(), peer_memory_s=PEER_MEMORY_S):
         if repeat_count < 1:
             raise ValueError("repeat_count must be >= 1")
         self.threshold = threshold
@@ -191,7 +215,10 @@ class BlockPolicy:
         self._ports = {}            # (src, dst, proto) -> WindowDistinct of dst ports
         self._hosts = {}            # (src, dport, proto) -> WindowDistinct of dst ips
         self._scan_fired = {}       # (kind, key) -> t_us of the last scan trigger
+        self._contacted = {}        # remote ip -> t_us this network last used it as a server
+        self.peer_memory_us = int(peer_memory_s * 1e6)
         self._seq = 0
+        self.set_own_addresses(own_addresses)
         protected = parse_networks(protected_cidrs)
         if allow_private_blocks:
             private = set(parse_networks(RFC1918))
@@ -202,6 +229,12 @@ class BlockPolicy:
             self.allowlist += load_allowlist_file(allowlist_file)
 
     # ── address checks ─────────────────────────────────────────────────
+    def set_own_addresses(self, addrs):
+        """This machine's addresses: never blocked, whatever the CIDR lists say.
+        Without this, an inbound flow on a host with a public address picked
+        the host itself as the target (responder first) and not the attacker."""
+        self.own = {ipaddress.ip_address(a) for a in addrs}
+
     def why_protected(self, ip_str):
         """Reason this address must never be blocked, or None."""
         try:
@@ -210,6 +243,8 @@ class BlockPolicy:
             return "not an IP address"
         if ip.version != 4:
             return "not IPv4"
+        if ip in self.own:
+            return "this machine's own address"
         if ip.is_loopback or ip.is_link_local or ip.is_multicast or \
                 ip.is_unspecified or ip.is_reserved or ip == ipaddress.IPv4Address("255.255.255.255"):
             return "special-purpose address"
@@ -266,8 +301,7 @@ class BlockPolicy:
                 hits = self._ml_hits.get(target)
                 if hits is None:
                     hits = self._ml_hits[target] = WindowDistinct(self.repeat_window_us)
-                self._seq += 1
-                n = hits.add(flow_time_us(rec, "last_seen_us"), self._seq)
+                n = hits.add(flow_time_us(rec, "last_seen_us"), self._flow_id(rec))
                 self._prune(self._ml_hits, self.repeat_window_us)
             detail = (f"{n} flows with ml_anomaly_score >= {self.threshold:.2f} within "
                       f"{self.repeat_window_us // 1_000_000}s (latest {score:.3f}, {model})"
@@ -318,6 +352,15 @@ class BlockPolicy:
             self._scan_fired[fired_key] = t
             w.clear()
             why = self.why_protected(src)
+            used = self._contacted.get(src)
+            if why is None and used is not None and t - used <= self.peer_memory_us:
+                # The source address can be forged: blocking a server this
+                # network depends on (its DNS resolver, say) would let anyone
+                # cut it off. A real scanner gets no results from a forged
+                # source, so reporting is enough here; other scanners are
+                # still blocked at once.
+                why = (f"a server this network used {max(t - used, 0) // 1_000_000}s ago; "
+                       f"the source may be forged")
             if why is None:
                 out.append(Decision("block", src, REASON_SCAN, detail))
             else:
@@ -336,8 +379,36 @@ class BlockPolicy:
         for k in [k for k, w in table.items() if w.newest < newest - window_us]:
             del table[k]
 
+    def _flow_id(self, rec):
+        """One value per connection: the sensor's active-timeout snapshots of a
+        long connection repeat its 5-tuple and first_seen_us, so they count
+        once. Records without those fields (tests, tools) count separately."""
+        key = tuple(rec.get(k) for k in ("src_ip", "src_port", "dst_ip", "dst_port",
+                                         "protocol", "first_seen_us"))
+        if None in key:
+            self._seq += 1
+            return self._seq
+        return key
+
+    def _note_server(self, rec):
+        """Remember remote servers this network uses: a local address started
+        the flow and the remote side answered."""
+        if not int(rec.get("bytes_down") or 0):
+            return
+        src, dst = rec.get("src_ip"), rec.get("dst_ip")
+        if not src or not dst or self.why_protected(src) is None or \
+                self.why_protected(dst) is not None:
+            return
+        t = flow_time_us(rec, "last_seen_us")
+        if t > self._contacted.get(dst, 0):
+            self._contacted[dst] = t
+        if len(self._contacted) > self.MAX_TRACKED:
+            cutoff = t - self.peer_memory_us
+            self._contacted = {k: v for k, v in self._contacted.items() if v >= cutoff}
+
     def decisions(self, rec):
         """All decisions for this record ([] if nothing applies). Updates state."""
+        self._note_server(rec)
         out = self._scan_decisions(rec)
         d = self._flow_decision(rec)
         if d is not None:                   # includes "watching" skips (reason_code 0)

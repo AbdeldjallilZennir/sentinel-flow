@@ -635,7 +635,17 @@ def main():
     mit = None
     if args.mitigate != "none":
         import mitigator as mg_mod
-        policy = mg_mod.BlockPolicy(
+
+        def own_addresses(first=False):     # re-read with each mitigation refresh
+            try:
+                return mg_mod.local_ipv4_addresses(args.mitigate_netns)
+            except Exception as e:
+                if first:
+                    log(f"mitigation: cannot read this machine's addresses ({e}); "
+                        "protect a public one with --allowlist")
+                return None
+
+        policy = mg_mod.BlockPolicy(own_addresses=own_addresses(first=True) or (),
             protected_cidrs=args.protected_cidr or mg_mod.DEFAULT_PROTECTED,
             allowlist=args.allowlist, allow_private_blocks=args.allow_private_blocks,
             use_severe_risk=not args.no_severe_risk_blocks,
@@ -659,6 +669,7 @@ def main():
             f"|scan>={policy.scan_ports}ports,{policy.sweep_hosts}hosts/{args.scan_window:g}s protected="
             f"{','.join(str(n) for n in policy.protected) or 'none'} "
             f"allowlist={','.join(str(n) for n in policy.allowlist) or 'none'} "
+            f"own={','.join(sorted(map(str, policy.own))) or 'none'} "
             f"sinks={','.join(type(x).__name__ for x in sinks)}")
 
     if args.from_jsonl:
@@ -745,6 +756,10 @@ def main():
             break
         if mit is not None and time.time() - mit.last_refresh >= mit.refresh_s:
             mit.refresh()                    # kernel drop counters, expiries
+            own = own_addresses()            # e.g. a new DHCP address
+            if own is not None and set(own) != {str(a) for a in mit.policy.own}:
+                mit.policy.set_own_addresses(own)
+                log(f"mitigation: own addresses now {','.join(own) or 'none'}")
         # Re-attach ClickHouse if it comes back after a failed write.
         if ch is not None and ch not in stores and args.backend in ("auto", "both") and \
                 time.monotonic() - last_ch_probe > 30:

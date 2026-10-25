@@ -48,6 +48,15 @@ def udp_frame(src, dst, sport, dport, payload):
     return b"\x02\0\0\0\0\x02\x02\0\0\0\0\x01\x08\x00" + ip + udp
 
 
+def ip_fragment(src, dst, ident, offset, more, data, proto=17):
+    """One IPv4 fragment carrying `data` at byte `offset` (a multiple of 8)."""
+    flags_off = (0x2000 if more else 0) | (offset // 8)
+    ip = struct.pack("!BBHHHBBH4s4s", 0x45, 0, 20 + len(data), ident, flags_off, 64,
+                     proto, 0, bytes(src), bytes(dst))
+    ip = ip[:10] + struct.pack("!H", _csum(ip)) + ip[12:]
+    return b"\x02\0\0\0\0\x02\x02\0\0\0\0\x01\x08\x00" + ip + data
+
+
 def write_pcap(path, records, linktype=1):
     with open(path, "wb") as f:
         f.write(struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, linktype))
@@ -101,6 +110,25 @@ class SensorPcapTests(unittest.TestCase):
         self.assertEqual([f["pkt_count"] for f in a], [5, 5])
         self.assertEqual(a[0]["last_seen_us"], int(T0 * 1e6) + 400000)
         self.assertEqual(a[1]["first_seen_us"], int(T0 * 1e6) + 42000000)
+
+    def test_later_fragments_have_no_ports(self):
+        # 60 UDP datagrams of 3000 bytes, each sent as 3 IP fragments. Only
+        # the first fragment has the UDP header; the others start with
+        # payload. Reading "ports" from them made one fake flow per
+        # fragment (different payload -> different ports), which the
+        # mitigator's port-scan rule then counted as a scan.
+        src, dst = [203, 0, 113, 9], [10, 0, 0, 2]
+        recs = []
+        for i in range(60):
+            payload = bytes([i + 1]) * 2992
+            udp = struct.pack("!HHHH", 4500, 4500, 8 + len(payload), 0) + payload
+            chunks = [udp[o:o + 1480] for o in range(0, len(udp), 1480)]
+            for j, c in enumerate(chunks):
+                recs.append((T0 + i * 0.1 + j * 0.001,
+                             ip_fragment(src, dst, i, j * 1480, j < len(chunks) - 1, c)))
+        flows = run_sensor(self.pcap("frag.pcap", recs))
+        self.assertEqual(sorted((f["src_port"], f["dst_port"], f["pkt_count"]) for f in flows),
+                         [(0, 0, 120), (4500, 4500, 60)])
 
     def test_out_of_order_timestamps_no_underflow(self):
         # Packet times: 10, 11, 5 (goes backwards), 12  (seconds after T0)

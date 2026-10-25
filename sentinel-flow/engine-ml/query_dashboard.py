@@ -26,6 +26,35 @@ DEFAULT_DB = os.path.join(HERE, "data", "sentinel_flows.db")
 
 # Each panel: title + SQL per backend. SQLite table is `network_flows`,
 # ClickHouse table is `sentinel.network_flows`; columns are identical.
+#
+# Flow panels read `flows`: one row per connection. The sensor's active
+# timeout (-A, default 60 s) stores a snapshot of a long connection every
+# interval, each with counters since first_seen_us, so counting rows of
+# network_flows counts long connections several times. `flows` keeps the
+# latest record of each connection (same 5-tuple and first_seen_us).
+FLOWS = {
+    "sqlite": """\
+SELECT * FROM (
+  SELECT *, ROW_NUMBER() OVER (
+           PARTITION BY src_ip, src_port, dst_ip, dst_port, protocol, first_seen_us
+           ORDER BY last_seen_us DESC, pkt_count DESC, ingested_at_us DESC) AS snapshot_rank
+  FROM network_flows)
+WHERE snapshot_rank = 1""",
+    "clickhouse": """\
+SELECT * FROM sentinel.network_flows
+ORDER BY last_seen_us DESC, pkt_count DESC, ingested_at_us DESC
+LIMIT 1 BY src_ip, src_port, dst_ip, dst_port, protocol, first_seen_us""",
+}
+
+
+def full_sql(sql, key):
+    """The query with the `flows` definition in front, if it reads `flows`."""
+    if "FROM flows" not in sql:
+        return sql
+    body = "\n".join("  " + line for line in FLOWS[key].splitlines())
+    return f"WITH flows AS (\n{body})\n{sql}"
+
+
 PANELS = [
     {
         "title": "1. Protocol Breakdown",
@@ -35,7 +64,7 @@ SELECT app_protocol,
        SUM(pkt_count)  AS packets,
        SUM(bytes_up)   AS bytes_up,
        SUM(bytes_down) AS bytes_down
-FROM network_flows
+FROM flows
 GROUP BY app_protocol
 ORDER BY flows DESC, app_protocol""",
         "clickhouse": """\
@@ -44,7 +73,7 @@ SELECT app_protocol,
        sum(pkt_count)  AS packets,
        sum(bytes_up)   AS bytes_up,
        sum(bytes_down) AS bytes_down
-FROM sentinel.network_flows
+FROM flows
 GROUP BY app_protocol
 ORDER BY flows DESC, app_protocol""",
     },
@@ -56,7 +85,7 @@ ORDER BY flows DESC, app_protocol""",
 SELECT ja4_client, flow, app_protocol
 FROM (SELECT ja4_client, first_seen_us, app_protocol,
              src_ip || ':' || src_port || ' -> ' || dst_ip || ':' || dst_port AS flow
-      FROM network_flows
+      FROM flows
       WHERE ja4_client NOT IN ('', 'N/A')
       ORDER BY first_seen_us DESC
       LIMIT 100)
@@ -66,7 +95,7 @@ SELECT ja4_client, flow, app_protocol
 FROM (SELECT ja4_client, first_seen_us, app_protocol,
              concat(src_ip, ':', toString(src_port), ' -> ',
                     dst_ip, ':', toString(dst_port)) AS flow
-      FROM sentinel.network_flows
+      FROM flows
       WHERE ja4_client NOT IN ('', 'N/A')
       ORDER BY first_seen_us DESC
       LIMIT 100)
@@ -79,14 +108,14 @@ ORDER BY ja4_client, first_seen_us""",
         "sqlite": """\
 SELECT ndpi_risk_mask, ndpi_risk_str, src_ip, dst_ip, app_protocol,
        ml_anomaly_score, is_alert
-FROM network_flows
+FROM flows
 WHERE is_alert = 1
 ORDER BY ml_anomaly_score DESC, first_seen_us
 LIMIT 100""",
         "clickhouse": """\
 SELECT ndpi_risk_mask, ndpi_risk_str, src_ip, dst_ip, app_protocol,
        ml_anomaly_score, is_alert
-FROM sentinel.network_flows
+FROM flows
 WHERE is_alert = 1
 ORDER BY ml_anomaly_score DESC, first_seen_us
 LIMIT 100""",
@@ -102,7 +131,7 @@ SELECT src_ip, dst_ip, app_protocol, pkt_count,
        CASE WHEN last_seen_us - first_seen_us
                  = CAST(ROUND(flow_duration_ms * 1000) AS INTEGER)
             THEN 'OK' ELSE 'MISMATCH' END              AS verdict
-FROM network_flows
+FROM flows
 ORDER BY verdict = 'OK', first_seen_us DESC
 LIMIT 100""",
         "clickhouse": """\
@@ -114,7 +143,7 @@ SELECT src_ip, dst_ip, app_protocol, pkt_count,
        if(toInt64(last_seen_us) - toInt64(first_seen_us)
             = toInt64(round(flow_duration_ms * 1000)),
           'OK', 'MISMATCH')                            AS verdict
-FROM sentinel.network_flows
+FROM flows
 ORDER BY verdict = 'OK', first_seen_us DESC
 LIMIT 100""",
     },
@@ -127,7 +156,7 @@ SELECT src_ip || ' -> ' || dst_ip || ':' || dst_port AS flow,
        app_protocol, ja4_client,
        ROUND(ml_anomaly_score, 3) AS score, ROUND(ml_c2_proba, 3) AS c2_proba,
        ROUND(ml_iforest_score, 3) AS iforest, is_alert, ml_model
-FROM network_flows
+FROM flows
 ORDER BY ml_anomaly_score DESC, first_seen_us
 LIMIT 15""",
     "clickhouse": """\
@@ -135,7 +164,7 @@ SELECT concat(src_ip, ' -> ', dst_ip, ':', toString(dst_port)) AS flow,
        app_protocol, ja4_client,
        round(ml_anomaly_score, 3) AS score, round(ml_c2_proba, 3) AS c2_proba,
        round(ml_iforest_score, 3) AS iforest, is_alert, ml_model
-FROM sentinel.network_flows
+FROM flows
 ORDER BY ml_anomaly_score DESC, first_seen_us
 LIMIT 15""",
 })
@@ -210,17 +239,17 @@ SELECT COUNT(*), SUM(is_alert), SUM(ndpi_risk_mask > 0),
        SUM(last_seen_us - first_seen_us
            != CAST(ROUND(flow_duration_ms * 1000) AS INTEGER)),
        SUM(ml_anomaly_score >= 0.8), GROUP_CONCAT(DISTINCT ml_model)
-FROM network_flows""",
+FROM flows""",
     "clickhouse": """\
 SELECT count(), sum(is_alert), countIf(ndpi_risk_mask > 0),
        countIf(toInt64(last_seen_us) - toInt64(first_seen_us)
                != toInt64(round(flow_duration_ms * 1000))),
        countIf(ml_anomaly_score >= 0.8), arrayStringConcat(groupUniqArray(ml_model), ',')
-FROM sentinel.network_flows""",
+FROM flows""",
 }
 
 
-# ── Backends: run(sql) -> (column_names, rows) ────────────────────────────
+# ── Backends: run_all([sql, ...]) -> [(column_names, rows) or exception] ──
 class SQLiteBackend:
     key = "sqlite"
 
@@ -230,26 +259,39 @@ class SQLiteBackend:
         self.path = path
         self.label = f"SQLite {os.path.relpath(path)}"
 
-    def run(self, sql):
-        # Read-only connection per query: safe under a live WAL writer.
+    def _connect(self):
+        # Read-only connection per refresh: safe under a live WAL writer.
         uri = f"file:{urllib.parse.quote(self.path)}?mode=ro"
+        db = sqlite3.connect(uri, uri=True)
         try:
-            return self._query(uri, sql)
+            db.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()
+            return db
         except sqlite3.OperationalError as e:
+            db.close()
             # A WAL database needs a -shm file beside it. When the daemon has
             # stopped (it removes that file) and this user can't create it,
             # e.g. the daemon ran as root and owns the folder, read the file as
             # a fixed snapshot instead. Nothing is writing to it at that point.
             if "readonly" not in str(e) and "unable to open" not in str(e):
                 raise
-            return self._query(uri + "&immutable=1", sql)
+            return sqlite3.connect(uri + "&immutable=1", uri=True)
 
-    @staticmethod
-    def _query(uri, sql):
-        db = sqlite3.connect(uri, uri=True)
+    def run_all(self, queries):
+        # `flows` is built once per refresh as a temporary table (private to
+        # this connection), not once per query: the window function is the
+        # slow part.
+        db = self._connect()
         try:
-            cur = db.execute(sql)
-            return [d[0] for d in cur.description], cur.fetchall()
+            if any("FROM flows" in q for q in queries):
+                db.execute("CREATE TEMP TABLE flows AS " + FLOWS["sqlite"])
+            out = []
+            for sql in queries:
+                try:
+                    cur = db.execute(sql)
+                    out.append(([d[0] for d in cur.description], cur.fetchall()))
+                except sqlite3.Error as e:
+                    out.append(e)
+            return out
         finally:
             db.close()
 
@@ -276,6 +318,15 @@ class ClickHouseBackend:
                       for v, f in zip(r, is_f)) for r in res["data"]]
         return [m["name"] for m in res["meta"]], rows
 
+    def run_all(self, queries):
+        out = []
+        for sql in queries:
+            try:
+                out.append(self.run(full_sql(sql, self.key)))
+            except Exception as e:
+                out.append(e)
+        return out
+
 
 # ── Rendering ─────────────────────────────────────────────────────────────
 def fmt(v):
@@ -298,18 +349,22 @@ def text_table(cols, rows):
 
 
 def collect(backend):
-    total, alerts, risky, mismatches, ml_hits, models = backend.run(SUMMARY[backend.key])[1][0]
+    summary, *results = backend.run_all([SUMMARY[backend.key]] +
+                                        [p[backend.key] for p in PANELS])
+    if isinstance(summary, Exception):
+        raise summary
+    total, alerts, risky, mismatches, ml_hits, models = summary[1][0]
     panels = []
-    for p in PANELS:
-        try:
-            cols, rows = backend.run(p[backend.key])
-        except Exception as e:
+    for p, res in zip(PANELS, results):
+        if isinstance(res, Exception):
             if "optional_table" not in p:
-                raise
+                raise res
             # Phase 4 tables exist only after a daemon run with --mitigate.
             cols, rows = ["note"], [(f"no mitigation data yet: {p['optional_table']} "
-                                     f"({type(e).__name__})",)]
-        panels.append({"title": p["title"], "sql": p[backend.key],
+                                     f"({type(res).__name__})",)]
+        else:
+            cols, rows = res
+        panels.append({"title": p["title"], "sql": full_sql(p[backend.key], backend.key),
                        "columns": cols, "rows": rows})
     return {"source": backend.label,
             "summary": {"flows": total or 0, "alerts": alerts or 0,

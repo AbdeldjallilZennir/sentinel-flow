@@ -378,7 +378,15 @@ static void packet_callback(u_char *user __attribute__((unused)),
     const u_char   *l4_pkt      = ip_pkt + ip_hdr_len;
     unsigned int    l4_remaining = hdr->caplen - ip_offset - ip_hdr_len;
 
-    if (iph->ip_p == IPPROTO_TCP && l4_remaining >= sizeof(struct tcphdr)) {
+    /* Only the first fragment of a fragmented datagram has the TCP/UDP
+     * header; later ones start with payload. Reading "ports" from them
+     * made one fake flow per fragment, which looks like a port scan.
+     * Later fragments go into one port-less flow per address pair. */
+    bool later_fragment = (ntohs(iph->ip_off) & IP_OFFMASK) != 0;
+
+    if (later_fragment) {
+        payload_len = (uint16_t)l4_remaining;
+    } else if (iph->ip_p == IPPROTO_TCP && l4_remaining >= sizeof(struct tcphdr)) {
         struct tcphdr tcp_hdr;
         memcpy(&tcp_hdr, l4_pkt, sizeof(tcp_hdr));
         const struct tcphdr *tcph = &tcp_hdr;
