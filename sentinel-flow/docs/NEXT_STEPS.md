@@ -1,6 +1,6 @@
 # SentinelFlow — Next Steps
 
-Proposed work after Part 7 (2026-10-24), most useful first. Big downloads belong on **Google Colab**, not the development machine, which is on mobile data. Small things (IOC text files, git push) are fine locally.
+Proposed work after Part 8 (2026-10-25), most useful first. Big downloads belong on **Google Colab**, not the development machine, which is on mobile data. Small things (IOC text files, git push) are fine locally.
 
 Words you may not know are explained in [GUIDE.md](GUIDE.md). The evidence behind every number is in [REPORT.md](REPORT.md).
 
@@ -85,6 +85,12 @@ Paste back the output. It shows which addresses and protocols each capture conta
 | Offline idle expiry checked every 1,000 packets | Documented, kept for reproducibility (REPORT Part 4 §1.3) | Optional change |
 | Unfinished attack-family dataset code | In `git stash` ("unfinished: attack families + lab sessions") | Decide: finish or drop (`git stash drop`) |
 | Phase 5 demo | Not started | Plan a demo scenario (lab VM + dashboard) |
+| Forged packets and the severe / ML triggers | Not checked (REPORT Part 8 §6) | Check whether one forged inbound packet can trigger a block of its (forged) source; if so, require two-way traffic before blocking |
+| Scan rule: servers the network used | Reported, not blocked (Part 8 §2); a lured connection opens a gap | Decide whether to also block when the ML score for that address is high |
+| Flow direction when capture starts mid-connection | `src` is whoever sent the first packet seen (Part 8 §6) | Use the TCP SYN to tell client from server |
+| Dashboard speed on big databases | 0.56 s per refresh at 109k rows (Part 8 §2) | Store one row per connection, or keep a summary table |
+| `run_live.sh --block` end to end | Tested in parts (Part 8 §5) | One full blocking run in the lab VM |
+| `SqliteEventSink` has no `close()` | A test leaves an SQLite connection open (ResourceWarning) | Add `close()` and call it on shutdown |
 
 ## 4. Housekeeping
 

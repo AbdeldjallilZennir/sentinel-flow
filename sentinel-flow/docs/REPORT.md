@@ -1,4 +1,4 @@
-# SentinelFlow — Project Report (Parts 1–7)
+# SentinelFlow — Project Report (Parts 1–8)
 
 All phase reports in one file, in the order they were written. Each part keeps its original text; only headings were moved one level down, cross-references were changed from file names (`Part3.md`) to part names (Part 3), and image paths were fixed. Numbers in an older part describe the code and model **at that time**; later parts say what changed.
 
@@ -14,6 +14,7 @@ For a plain-language explanation of the project and every tool, read [GUIDE.md](
 - [Part 5](#part-5) — Packaging, VM install, first live nmap test, risk-mask fix, retrain (2026-10-24)
 - [Part 6](#part-6) — Severe alert default, per-IP blocking rule, scan detection, dashboard events (2026-10-24)
 - [Part 7](#part-7) — 23 more training cases, retrained model (2026-10-24)
+- [Part 8](#part-8) — Code review: 15 bugs found and fixed (2026-10-25)
 
 ---
 
@@ -3212,3 +3213,109 @@ Out-of-fold per-IP blocking on the new training set: 106 of 171 malicious IPs, 3
 - The holdout is 5 captures; "more endpoints, more false alerts" is one sample.
 - The 3 Google false alerts suggest long TLS sessions now look more C2-like; worth watching on live traffic.
 - Rolling back: `git checkout ddcbd03 -- sentinel-flow/engine-ml/models/{c2_detector.onnx,anomaly_iforest.onnx,model_meta.json}` (or revert the commit).
+
+---
+
+<a id="part-8"></a>
+
+## Part 8 — Code review: 15 bugs found and fixed
+
+Date: 2026-10-25. Commits `a8d8a1b` (dashboard), `df53f9e` (crashes, data loss, live runs), `8d13bea` (blocking decisions). The model is unchanged (`203d33a1`).
+
+Where the bugs came from:
+- **5 were found by running the dashboard**, on the Part 7 database, on a fresh replay with the current model, and against ClickHouse.
+- **10 came from a multi-agent cloud code review** (Claude Code `/code-review ultra`) of all 41 code files: 7,422 lines of Python, C, shell and build files. Docs, data, models, the vendored `uthash.h`, `cJSON` and `zmq.h`, and the Grafana JSON were left out to fit the size limit.
+
+Each bug was reproduced, or shown with a new test, before it was fixed, and checked again afterwards.
+
+### 0. Summary
+
+| # | Where | Bug | Effect before the fix |
+|---|---|---|---|
+| 1 | dashboard, panel 6 | block status stays "active" | The 24 blocks from 2026-10-23 still showed "active" two days later |
+| 2 | dashboard, panels 2–4 | no row limit | The web page was 1.18 MB, reloaded every 10 s, and grew during live runs |
+| 3 | dashboard, panel 3 | "Security Alerts" listed every nDPI-risk flow | 3,061 rows were shown as alerts; only 846 are alerts under the Part 6 rule |
+| 4 | dashboard, SQLite | crash on a WAL database in a folder the user can't write | `attempt to write a readonly database` after a root daemon had stopped |
+| 5 | dashboard `--serve` | crash when the port is taken | `run_live.sh --serve` still printed the URL; the dashboard was gone |
+| 6 | mitigator, scan rule | a forged scan blocks any public IP | About 50 spoofed packets could block e.g. the DNS resolver, renewable every 10 min |
+| 7 | mitigator, target choice | the host's own public address chosen as target | On inbound flows the host blocked itself and the attacker went free |
+| 8 | sensor | ports read from later IP fragments | 60 fragmented datagrams became 60 fake flows (ports 257, 514, …), which can look like a scan |
+| 9 | mitigator + dashboards | active-timeout snapshots counted as separate flows | One long connection met "2 flows ≥ 0.80"; dashboard totals counted it several times |
+| 10 | `zmq_sink` | stack buffer overflow on messages > 64 KiB | AddressSanitizer: stack-buffer-overflow; truncated records passed on |
+| 11 | daemon | one malformed record crashes it | `OverflowError` / SQLite integer overflow / `RecursionError`; the pending batch (up to 1,000 flows) lost |
+| 12 | daemon `--backend clickhouse` | one failed write drops every later row | Exit code 0, rows silently lost; the log claimed they were "kept in SQLite/JSONL" (neither is used in this mode) |
+| 13 | `run_live.sh --block` | Ctrl+C leaves the root daemon running | With sudo ≥ 1.9.14 (`use_pty`, default) `$!` is not the daemon |
+| 14 | `run_live.sh` | root-owned output files after a `--block` run | The next normal run failed with `PermissionError` |
+| 15 | sensor, live capture | 200 ms wait per flow while the daemon is down | Capture falls behind and misses traffic |
+
+### 1. Dashboard (`query_dashboard.py`, Grafana)
+
+1. **Stale "active" blocks.** The daemon writes `expired` only while it runs; after it stops or restarts, rows in `blocked_ips` stay `active`. Panel 6 now marks a block expired once its last known expiry has passed. The expiry is the time of the latest `block` / `counters` event plus its timeout. The same fix went into the ClickHouse query and the Grafana panel. Check: the Part 7 database shows 24 expired, a fresh dry-run shows 21 active, and a fake two-day-old block in ClickHouse shows expired and sorts last.
+2. **Unbounded panels.** Panels 2–4 listed every flow. They now show 100 rows each: the newest TLS flows, the top alerts by score, and timestamp mismatches first, then the newest flows. The web page went from 1,183,174 to about 70,000 bytes on the same data.
+3. **Panel 3 vs. the alert rule.** Panel 3 used `ndpi_risk_mask > 0`, from before Part 6 changed the alert rule to severe risks only. It now uses `is_alert = 1`, like the summary count and the Grafana alerts panel.
+4. **Read-only folder.** A WAL database needs a `-shm` file beside it. If the daemon ran as root, owns the folder and has stopped, a normal user can't create that file. The dashboard now falls back to reading the file as a fixed snapshot (`immutable=1`). This is safe because nothing is writing to it at that point. With a live writer the normal read-only mode works; that was tested with the files made unwritable.
+5. **Startup errors.** A taken port now gives a one-line message, and `run_live.sh` checks after 1 s that the dashboard is still running before printing its URL. Piping the terminal output into `head` / `less` no longer prints a traceback.
+
+### 2. Blocking decisions (`mitigator.py`, sensor)
+
+6. **Forged scans.** The scan rule blocks the source address, and the source can be forged. Blocking scans only after a proven connection was rejected: an attacker can scan from one machine and attack from another. Reporting scans without blocking was rejected too, because a real scanner would keep its results.
+   - **Rule now:** a scan "from" a server this network used in the last 24 h (a local address started a flow to it and it answered) is reported as "detected, not blocked". All other scanners are still blocked at once.
+   - **Why this is enough:** a forged scan gives the attacker no results, since the replies go to the forged address. The addresses worth forging are the ones the network uses, such as its DNS resolver and update servers.
+   - **Tests:** a forged scan "from" a resolver that answered a LAN query is reported, not blocked; the old code blocked it. The same scan more than 24 h after the last contact is blocked. Unanswered or inbound-only contact doesn't protect a scanner. The lab nmap replay is still detected.
+7. **Own address.** For ML / severe triggers the target is the responder (`dst_ip`) unless it is protected, so on a host with a public address an inbound flow picked the host itself. The daemon now reads the machine's IPv4 addresses with `ip -j addr`, also inside the `--mitigate-netns` namespace, and re-reads them with each 10 s refresh. They are never blocked, and the `mitigation:` log line lists them (`own=…`). On the old code, an inbound flow to a public host address (score 0.97) blocked the host's own address.
+8. **Fragments.** Only the first fragment of a datagram has the TCP/UDP header. The sensor now puts later fragments into one port-less flow per address pair. New test, 60 UDP datagrams in 3 fragments each: the old sensor exported 60 flows with ports taken from payload bytes; the new one exports 2 flows, ports 4500 (60 packets) and ports 0 (120 packets).
+9. **Snapshots.** With `-A 60` (the default, also for PCAP replays) a long connection is exported every 60 s with counters since `first_seen_us`.
+   - **Mitigator:** the repeat rule now counts a connection once, keyed on the 5-tuple + `first_seen_us`. On the old code, two snapshots of one connection at 0.85 triggered an `ml_repeat` block.
+   - **Dashboards:** flow panels and totals read one row per connection, the latest record, in SQLite, ClickHouse and Grafana. SQLite builds that set once per refresh as a temporary table.
+   - **Check:** 3,634 records (3,604 connections plus 30 extra snapshots) give exactly the same panels 1–5 and totals as the 3,604 records alone, and SQLite and ClickHouse agree on every panel.
+   - **Cost:** a full refresh on 109,020 rows takes 0.56 s, against 0.11 s before. The first version, which rebuilt the set in every query, took 2.03 s.
+   - **Existing data:** the Part 7 database has no snapshot rows, so its numbers don't change.
+
+### 3. Crashes and data loss
+
+10. **`zmq_sink` overflow.** `zmq_recv` returns the full message length even when it truncated the message, and `buf[n] = '\0'` then wrote past the 64 KiB stack buffer. Messages over the limit are now dropped with a log line and still counted for `-n`. With AddressSanitizer, a 65,540-byte message crashed the old binary (stack-buffer-overflow) and is dropped by the new one, which then exits normally after 2 messages.
+11. **Malformed records.** Three inputs used to stop the daemon; each is now rejected into `rejected.jsonl`:
+    - integers ≥ 2^63 in `u64` fields, which pass validation but don't fit SQLite's signed 64-bit integers. The limit is now 2^63 − 1; nDPI keeps `NDPI_MAX_RISK` ≤ 63, so real risk masks stay below 2^63.
+    - JSON integers too large for a float (`OverflowError`)
+    - deeply nested JSON (`RecursionError`, not a `ValueError`)
+
+    On a test file with 3 good and 3 bad records, the old daemon crashed and the new one accepted 3, rejected 3 and exited 0. The value 2^63 − 1 is still accepted.
+12. **ClickHouse-only mode.** After one failed write the store was removed, and only `auto` mode re-attached it. Tested with a fake ClickHouse that fails insert #3:
+    - `--backend clickhouse`: the old daemon exited 0 and lost rows 4–5. The new one stops with exit code 1 and says how many rows were written.
+    - `--backend both`: ClickHouse now re-attaches like `auto`. Verified: it re-attached at the next 30 s probe, and the next insert succeeded.
+
+### 4. Live runs
+
+13. **Orphaned root daemon.** With `use_pty`, sudo starts the command as a process-group leader; `setsid` then forks, so `$!` was not the daemon. Reproduced under a real terminal with sudo 1.9.17: `$!` had already exited, and the root process survived `sudo kill`. The daemon's shell now writes its own PID to `logs/daemon-*.pid` just before it `exec`s the daemon. `cleanup()` signals that PID and waits for it to exit.
+14. **Root-owned files.** `run_live.sh` now gives `sentinel_flows.db*` and the JSONL outputs back to the user (`sudo chown`) at start and after the daemon stops. Checked with root-owned test files. Without the fix, the daemon fails with `PermissionError`.
+15. **Live send stall.** The "degraded" flag still allowed one 200 ms blocking send per flow in live mode. Now a live sensor doesn't wait at all after a drop, until a send succeeds again; PCAP replay is unchanged. Measured with a full queue and no consumer: 10 sends took 2.00 s before and 0.00 s after (live), and 2.00 s for PCAP both times.
+
+### 5. Tests and checks
+
+- Engine: daemon 15/15, mitigator 36/36 (4 new).
+- Sensor: `test_flow` 13/13, `test_stats` 24/24, PCAP tests 12/12 (1 new: fragments).
+- nftables lab test in network namespaces (`lab_nftables_netns.py`): passes, and the host's own ruleset is unchanged.
+- `run_live.sh -i lo --serve` (dry-run) under a real terminal: 13 flows captured and stored, the dashboard came up, and Ctrl+C stopped everything. No process was left running, and all files are owned by the user.
+- ClickHouse 24.8 in a temporary container: the dashboard output matches SQLite on every panel, and all 6 Grafana queries run.
+
+### 6. Not done / caveats
+
+- **Scan rule gap.** An attacker who first gets one of the network's machines to connect to their server, for example through a link, could then scan from that server without being blocked. The scan is still reported, and the ML / severe-risk rules still apply to that address.
+- **Cold start.** Right after the daemon starts it hasn't learned which servers the network uses, so a forged scan in the first seconds can still block one for 15 min.
+- **Not checked:** whether a single forged inbound packet can trigger a severe-risk or ML block of its forged source. The policy would allow it.
+- **Flow direction.** If capture starts mid-connection, the sensor's `src` is whoever sent the first packet it saw, so the scan rule may count a client's ephemeral port. Unchanged.
+- `run_live.sh --block` was tested in parts (PID tracking under sudo with a terminal, the `chown`), not as a full blocking run. Grafana's queries were run on ClickHouse, but the Grafana UI wasn't opened.
+- The sensor must be rebuilt (`make sensor`) on every other machine that runs it.
+- An existing mitigator test leaves an SQLite connection open (`ResourceWarning`; `SqliteEventSink` has no `close()`).
+
+### 7. What may and may not be said
+
+**May be said:**
+- A code review found 15 bugs in the dashboard, daemon, mitigator, sensor and live-run script. All were fixed, and each fix was checked against a reproduction of the bug.
+- Forged scans can no longer block a server the network used in the last 24 h, while other scanners are still blocked immediately.
+- Dashboard totals count each connection once, in SQLite, ClickHouse and Grafana.
+
+**Must not be said:**
+- **That the system can't be abused with forged packets.** See §6: the lured-connection gap, cold start, and single-packet severe / ML triggers.
+- **That `run_live.sh --block` was tested end to end live.**
+- **That the code is free of bugs.** The review covered the code files once; docs and data were not reviewed.

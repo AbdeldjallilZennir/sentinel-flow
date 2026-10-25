@@ -8,7 +8,7 @@ SentinelFlow watches network flows, recognises command-and-control (C2) traffic 
 
 > **New here? Start with [`sentinel-flow/docs/GUIDE.md`](sentinel-flow/docs/GUIDE.md)**: the whole project and every tool explained in plain language.
 >
-> **How to read this README.** Every number below was measured on the reference host and is quoted from the project report, [`sentinel-flow/docs/REPORT.md`](sentinel-flow/docs/REPORT.md) (Parts 1–7 in one file). Each part ends with a "may / must not be said" section, and this README follows it. Limits are listed in [What is not shown](#what-is-not-shown). Planned work: [`sentinel-flow/docs/NEXT_STEPS.md`](sentinel-flow/docs/NEXT_STEPS.md).
+> **How to read this README.** Every number below was measured on the reference host and is quoted from the project report, [`sentinel-flow/docs/REPORT.md`](sentinel-flow/docs/REPORT.md) (Parts 1–8 in one file). Each part ends with a "may / must not be said" section, and this README follows it. Limits are listed in [What is not shown](#what-is-not-shown). Planned work: [`sentinel-flow/docs/NEXT_STEPS.md`](sentinel-flow/docs/NEXT_STEPS.md).
 
 **Status (2026-10-24):**
 
@@ -59,8 +59,9 @@ The original blueprint and roadmap are kept in [`sentinel-flow/docs/BLUEPRINT.md
 │    1 h, OR severe nDPI risk → block the remote peer;                       │
 │    port scan (≥ 50 ports / 60 s) or host sweep (≥ 100 hosts / 60 s)        │
 │    → block the scanning source;                                            │
-│    never RFC 1918 / loopback / link-local / multicast / allowlisted        │
-│    addresses (protected scanners are reported, not blocked)                │
+│    never RFC 1918 / loopback / link-local / multicast / allowlisted /      │
+│    own addresses; protected scanners, and scans "from" servers the         │
+│    network used in the last 24 h (may be forged), are only reported        │
 │  • nftables: table inet sentinel, set blocked_ipv4 { flags timeout;        │
 │    timeout 15m; counter; }, drop in prerouting (saddr), output/forward     │
 │    (daddr); per-address packet/byte counters read back every 10 s          │
@@ -240,7 +241,7 @@ Each fix has a regression test that fails on the old binary ([Part 3 §3](sentin
 - **The closed loop on live capture or against a real C2 session.** It ran on an offline replay with synthetic follow-up traffic; time from detection to block wasn't measured.
 - **XDP blocking.** `mitigation-ebpf/` compiles, but attaching failed: iproute2's libbpf rejects the map definition. No XDP result is claimed ([Part 4 §6](sentinel-flow/docs/REPORT.md#part-4)).
 - **Safe production use without an allowlist.** The policy would block shared Microsoft/Cloudflare addresses seen in the data. `config/default_allowlist.txt` is only a starting point (6 addresses). Supply `--allowlist-file` with the cloud/CDN ranges you depend on ([Part 4 §2.1](sentinel-flow/docs/REPORT.md#part-4)).
-- **Scan detection in general.** The scan rule was tested on one lab nmap replay and synthetic probes. Its thresholds come from lab and corpus traffic, and slow scans (< 50 ports per minute) are not caught by design. Detection happens about 30 s after the 50th port, because the sensor exports a flow after 30 s idle.
+- **Scan detection in general.** The scan rule was tested on one lab nmap replay and synthetic probes. Its thresholds come from lab and corpus traffic, and slow scans (< 50 ports per minute) are not caught by design. Detection happens about 30 s after the 50th port, because the sensor exports a flow after 30 s idle. A scan "from" a server the network used in the last 24 h is reported, not blocked, because the source address can be forged; this leaves gaps listed in [Part 8 §6](sentinel-flow/docs/REPORT.md#part-8).
 - **The `pyzmq` transport.** Untested; the C `zmq_sink` path is the one that was verified.
 
 ---
@@ -266,7 +267,7 @@ sentinel-flow/
 ├── tests/verify_closed_loop.sh
 ├── docs/
 │   ├── GUIDE.md         plain-language explanation of the project and every tool  ← start here
-│   ├── REPORT.md        full project report, Parts 1–7 (all measurements and evidence)
+│   ├── REPORT.md        full project report, Parts 1–8 (all measurements and evidence)
 │   ├── NEXT_STEPS.md    proposed datasets and open items
 │   ├── LAB_SETUP.md     two-machine VirtualBox lab
 │   ├── BLUEPRINT.md     original project plan (kept unchanged)

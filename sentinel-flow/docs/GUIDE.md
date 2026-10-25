@@ -2,7 +2,7 @@
 
 This guide explains the whole project in simple words: what it does, how the parts fit together, what was done in each phase, and **every tool** that was used, with a short "what is it / why here" for each one.
 
-- Exact numbers and evidence: [REPORT.md](REPORT.md) (Parts 1–7)
+- Exact numbers and evidence: [REPORT.md](REPORT.md) (Parts 1–8)
 - What to do next: [NEXT_STEPS.md](NEXT_STEPS.md)
 - Short technical overview: the root [README.md](../../README.md)
 
@@ -116,6 +116,17 @@ Two flows of work exist side by side:
 **Part 6 — smarter rules.** The dashboard alert now uses only **severe** nDPI warnings. Blocking became **per address** instead of per flow: block when one flow is very suspicious (≥ 0.95), or when two flows to the same address are suspicious (≥ 0.80) within an hour. On training data this cut wrongly blocked normal servers from 44 to 15. A **port-scan detector** was added (50+ ports on one machine, or 100+ machines on one port, within 60 s); it catches the lab nmap scan. Then: a dashboard panel shows "detected, not blocked" events, and a starter **allowlist** file was added.
 
 **Part 7 — more and better data.** 23 more infection recordings were labeled by hand from their IOC lists (the training set went from 28 to 51 infected recordings), and the model was retrained. On the 5 unseen infections it now spots more attacker servers (17 of 23, was 15), including delivery servers it missed before, with more false alerts (12 instead of 3; most are internal traffic, which is never blocked). Blocking results stayed the same.
+
+**Part 8 — bug hunt.** The code was reviewed twice: once by running the dashboard on real data, and once by an automated multi-agent code review of all 41 code files. 15 bugs were found and fixed, and each one was reproduced on the old code. The most important ones:
+- **Faked port scans.** An attacker could fake the sender's address on a port scan, so the system blocked the wrong server, for example your DNS server. A faked scan gives the attacker no results, because the answers go to the faked address. So scans from servers your network used in the last 24 hours are now reported but not blocked; every other scanner is still blocked at once.
+- **Blocking itself.** On a machine with a public address, the blocker could block that machine itself. The daemon now reads the machine's own addresses and never blocks them.
+- **Fake flows from fragments.** Split-up (fragmented) packets created fake flows that looked like a port scan. They are now grouped correctly.
+- **Long connections counted many times.** The sensor reports long connections every 60 s, and these reports were counted as separate flows. The blocking rule and the dashboard totals now count each connection once.
+- **Crashes and lost data.** These include a memory overwrite in `zmq_sink`, a daemon crash on one malformed record, and rows silently lost when ClickHouse failed.
+- **Live-run problems.** Ctrl+C could leave the root daemon running, and a `--block` run left files that the next normal run couldn't write.
+- **Dashboard.** Blocks shown as "active" forever, a page that grew without limit, an alerts panel listing non-alerts, and crashes on a busy port or a root-owned folder.
+
+Details and limits: [REPORT.md Part 8](REPORT.md#part-8).
 
 **Cleanup.** Unused files were removed (old copies, PDF exports, unused tools), the seven reports were merged into [REPORT.md](REPORT.md), and this guide and [NEXT_STEPS.md](NEXT_STEPS.md) were written.
 
@@ -262,7 +273,7 @@ Model `lgbm+iforest-fv1-203d33a1` (Part 7):
 - **Blocking (per-address rule):** **14 of 23** attacker servers blocked, at least one in every infection. **2** normal servers wrongly blocked (two Microsoft addresses), **0** if you use the starter allowlist.
 - **False alerts:** 12 of 498 normal flows were flagged. 7 are internal traffic (never blocked; 6 of them are probably the attacker moving inside the network, which the labels count as normal), 2 are the Microsoft addresses, 3 are long Google connections (shown on the dashboard, not blocked).
 - **Cross-validation:** catches **65 %** of malicious flows with **95 %** of alerts being correct, at about a **1 %** false-alarm rate.
-- **Port scans:** the lab nmap scan is detected after 50 ports. A scanner inside your own network is reported as "detected, not blocked".
+- **Port scans:** the lab nmap scan is detected after 50 ports. A scanner inside your own network is reported as "detected, not blocked", and so is a scan "from" a server your network used in the last 24 hours (the sender may be faked).
 - **Why "only" 27 % of malicious flows are flagged on the holdout:** most malicious flows are the same beacon repeated thousands of times. Flagging one or two is enough to block the server.
 
 What is **not** proven: performance on real company networks, live capture speed, against malware families very different from the training data. See "What is not shown" in the README.
