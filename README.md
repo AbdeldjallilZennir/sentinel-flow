@@ -298,7 +298,13 @@ Blocking (`--mitigate`; rules explained in [How detection works](#how-detection-
 python3 engine-ml/query_dashboard.py                      # tables in the terminal   (= make dashboard)
 python3 engine-ml/query_dashboard.py --serve              # web page on 127.0.0.1:8080 (= make dashboard-web)
 python3 engine-ml/query_dashboard.py --backend clickhouse # read ClickHouse instead of SQLite
+python3 engine-ml/query_dashboard.py --new-test "nmap scan"   # start a new test (same as the page's button)
 ```
+
+**Tests (telling runs apart).** Click **Start new test** on the web page (optionally with a name), or run `--new-test NAME`. From then on, the page and the terminal show only flows and blocking events stored after that moment, so each test starts empty. A clock shows when the test started and how long it has run.
+- **Nothing is deleted:** pick an earlier test or **All flows** under *View* on the page, or use `--test N` / `--test all` in the terminal.
+- **Where tests are kept:** in `sentinel_flows.tests.json` next to the database, so the page, the terminal and later runs agree. The database itself stays read-only, so this works even when it belongs to root.
+- **Where test times come from:** a flow belongs to the test that was running when the daemon *stored* it, not to the time inside the capture. So replaying an old capture lands in the current test.
 
 | Option | Meaning | Default |
 |---|---|---|
@@ -310,6 +316,9 @@ python3 engine-ml/query_dashboard.py --backend clickhouse # read ClickHouse inst
 | `--serve` | serve a web page that reloads every 10 s; the data is also at `/api/panels.json` | off |
 | `--host ADDR` | address the web page listens on | 127.0.0.1 |
 | `--port N` | port of the web page | 8080 |
+| `--test N\|latest\|all` | which test the terminal / `--json` output shows | latest |
+| `--new-test [NAME]` | start a new test now and exit (no name: "Test N") | – |
+| `--tests-file FILE` | where tests are saved | next to the database, `*.tests.json` |
 
 - **Summary line:** number of flows, alerts, flows with an nDPI risk, timestamp mismatches, flows with ML score ≥ 0.80, and the scorer in use.
 - **Panels:**
@@ -318,11 +327,12 @@ python3 engine-ml/query_dashboard.py --backend clickhouse # read ClickHouse inst
   - **3** alerts (top 100 by score)
   - **4** timestamp check (mismatches first, then the newest 100)
   - **5** top 15 ML scores
-  - **6** blocks, with status and kernel drop counters
+  - **6** blocked addresses, with status, the last block time and kernel drop counters
   - **6b** the latest 50 block / scan / "detected, not blocked" events
 - **Counting:** each connection counts once, by its latest snapshot.
 - **Panels 6 and 6b** say "no mitigation data yet" until the daemon has run with `--mitigate`.
 - **Safe to run while the daemon is writing:** it opens the database read-only.
+- **The web page** updates itself every 10 s without reloading. It has **Pause** and a light / dark theme switch, and shows times in your local time zone; the terminal prints UTC.
 
 #### Grafana + ClickHouse (optional)
 

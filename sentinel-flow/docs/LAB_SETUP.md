@@ -65,7 +65,9 @@ The dashboard listens only on the VM's loopback. Reach it through an SSH tunnel:
 ssh -p 2222 -L 8080:127.0.0.1:8080 joe@localhost     # leave this open
 ```
 
-Then open **http://127.0.0.1:8080**: 6 panels, refreshing every 10 s; JSON at `/api/panels.json`.
+Then open **http://127.0.0.1:8080**. The page updates itself every 10 s; the data is also at `/api/panels.json`.
+
+**Before each test,** click **Start new test** (give it a name, e.g. "nmap from host"). The page then shows only what happens from that moment on; older flows are hidden, not deleted (*View* → an earlier test or *All flows*).
 
 ## 5. Results
 
