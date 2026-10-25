@@ -135,12 +135,15 @@ int zmq_publisher_send(const char *json_str, int patience_ms)
         return -1;
 
     /* Queue full (consumer slow) or peer not attached yet. Each blocking
-     * attempt waits up to ZMQ_SNDTIMEO (200 ms). After a drop we only
-     * try once until a send succeeds again, so a run with no consumer at
-     * all cannot stall for patience_ms on every flow. */
-    int attempts = degraded ? 1 : (patience_ms + 199) / 200;
+     * attempt waits up to ZMQ_SNDTIMEO (200 ms). After a drop, until a
+     * send succeeds again: PCAP replay tries once, live capture (patience
+     * <= 200 ms) does not wait at all, so a stopped consumer cannot stall
+     * the capture loop for 200 ms on every flow. */
+    int attempts = (patience_ms + 199) / 200;
     if (attempts < 1)
         attempts = 1;
+    if (degraded)
+        attempts = patience_ms > 200 ? 1 : 0;
     for (int i = 0; i < attempts; i++) {
         if (zmq_send(zmq_sock, json_str, len, 0) >= 0) {
             degraded = 0;

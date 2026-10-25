@@ -95,9 +95,18 @@ int main(int argc, char *argv[])
                         zmq_strerror(zmq_errno()));
             break;
         }
-        buf[n] = '\0';
-        printf("%s\n", buf);
-        fflush(stdout);
+        if ((size_t)n > sizeof(buf) - 1) {
+            /* zmq_recv returns the full message length even when it cut
+             * the message to fit buf: drop it instead of writing past buf
+             * or passing on a truncated record. Still counted below, so
+             * the "expecting N messages" exit is unchanged. */
+            fprintf(stderr, "[zmq_sink] dropped a %d-byte message (max %zu)\n",
+                    n, sizeof(buf) - 1);
+        } else {
+            buf[n] = '\0';
+            printf("%s\n", buf);
+            fflush(stdout);
+        }
         received++;
 
         if (expected > 0 && received >= expected) {

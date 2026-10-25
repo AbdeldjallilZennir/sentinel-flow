@@ -80,12 +80,19 @@ ENRICH_DEFAULTS = {"ml_c2_proba": -1.0, "ml_iforest_score": -1.0, "ml_model": ""
 ALL_FIELDS = SENSOR_FIELDS + ENRICH_FIELDS
 COLUMNS = [n for n, _ in ALL_FIELDS]
 
-_UMAX = {"u8": 0xFF, "u16": 0xFFFF, "u64": 0xFFFFFFFFFFFFFFFF}
+# u64 fields are capped at 2^63 - 1: SQLite stores signed 64-bit integers,
+# so a larger value would pass validation and then crash the write.
+_UMAX = {"u8": 0xFF, "u16": 0xFFFF, "u64": 0x7FFFFFFFFFFFFFFF}
 ALERT_THRESHOLD = 0.80
 
 
 class ValidationError(ValueError):
     pass
+
+
+# What one bad record can raise; it is rejected, the daemon keeps running.
+# json.loads raises RecursionError (not a ValueError) on deeply nested input.
+BAD_RECORD = (ValueError, RecursionError)
 
 
 def validate(rec):
@@ -119,7 +126,10 @@ def validate(rec):
         else:  # f64
             if isinstance(v, bool) or not isinstance(v, (int, float)):
                 raise ValidationError(f"{name}: expected number")
-            v = float(v)
+            try:
+                v = float(v)
+            except OverflowError:            # a JSON integer too big for a float
+                raise ValidationError(f"{name}: not finite") from None
             if v != v or v in (float("inf"), float("-inf")):
                 raise ValidationError(f"{name}: not finite")
         out[name] = v
@@ -685,13 +695,19 @@ def main():
                 try:
                     s.write(batch)
                 except Exception as e:  # keep the durable stores going
-                    if s is ch:
-                        ch_failed += len(batch)
-                        stores.remove(ch)
-                        log(f"clickhouse write failed ({e}); "
-                            f"{len(batch)} rows kept in SQLite/JSONL only")
-                    else:
+                    if s is not ch:
                         raise
+                    if stores == [ch]:
+                        # --backend clickhouse: nowhere else to keep the rows,
+                        # so stop instead of silently dropping the rest.
+                        log(f"clickhouse write failed ({e}); no other store — stopping. "
+                            f"Rows before this batch were written "
+                            f"({accepted - len(batch)} of {accepted} accepted).")
+                        sys.exit(1)
+                    ch_failed += len(batch)
+                    stores.remove(ch)
+                    log(f"clickhouse write failed ({e}); "
+                        f"{len(batch)} rows kept in SQLite/JSONL only")
             log(f"flushed {len(batch)} rows -> {','.join(s.name for s in stores)}"
                 f" (scored in {score_ms:.1f} ms; alerts={sum(f['is_alert'] for f in batch)};"
                 f" total accepted={accepted} rejected={rejected})")
@@ -712,7 +728,7 @@ def main():
                 rec = stamp(validate(json.loads(item)))
                 batch.append(rec)
                 accepted += 1
-            except (ValueError, ValidationError) as e:
+            except BAD_RECORD as e:
                 rejected += 1
                 log(f"rejected: {e}")
                 if rej_fh is None:
@@ -729,8 +745,8 @@ def main():
             break
         if mit is not None and time.time() - mit.last_refresh >= mit.refresh_s:
             mit.refresh()                    # kernel drop counters, expiries
-        # Re-attach ClickHouse if it comes up later (auto mode only).
-        if ch is not None and ch not in stores and args.backend == "auto" and \
+        # Re-attach ClickHouse if it comes back after a failed write.
+        if ch is not None and ch not in stores and args.backend in ("auto", "both") and \
                 time.monotonic() - last_ch_probe > 30:
             last_ch_probe = time.monotonic()
             if ch.ping():
@@ -748,7 +764,7 @@ def main():
         try:
             batch.append(stamp(validate(json.loads(item))))
             accepted += 1
-        except (ValueError, ValidationError):
+        except BAD_RECORD:
             rejected += 1
     flush()
     if mit is not None:
