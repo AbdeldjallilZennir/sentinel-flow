@@ -1,6 +1,14 @@
 # SentinelFlow — Makefile (Phases 1-3)
 
-.PHONY: all build clean sensor test help daemon dashboard dashboard-web stack-up stack-down test-engine test-sensor fetch-data dataset train holdout phase3 runtime-venv verify-closed-loop
+.PHONY: all build clean sensor test test-http test-tls help daemon dashboard dashboard-web stack-up stack-down test-engine test-sensor fetch-data dataset train holdout phase3 runtime-venv verify-closed-loop
+
+# Extra options for the daemon / dashboard targets, e.g.
+#   make daemon ARGS="--mitigate dry-run"     make dashboard ARGS="--show-sql"
+ARGS ?=
+
+# daemon.py's ONNX scorer needs numpy + onnxruntime: use the runtime venv
+# (make runtime-venv) when it exists, otherwise the system python3.
+RUNTIME_PY := $(if $(wildcard engine-ml/.venv-runtime/bin/python),engine-ml/.venv-runtime/bin/python,python3)
 
 # ── Build targets ─────────────────────────────────────────────────────
 
@@ -29,13 +37,13 @@ test-tls: sensor
 # ── Phase 2: ingestion & analytics ────────────────────────────────────
 
 daemon: sensor
-	@python3 engine-ml/daemon.py
+	@$(RUNTIME_PY) engine-ml/daemon.py $(ARGS)
 
 dashboard:
-	@python3 engine-ml/query_dashboard.py
+	@python3 engine-ml/query_dashboard.py $(ARGS)
 
 dashboard-web:
-	@python3 engine-ml/query_dashboard.py --serve --port 8080
+	@python3 engine-ml/query_dashboard.py --serve --port 8080 $(ARGS)
 
 test-engine:
 	@python3 engine-ml/tests/test_daemon.py
@@ -88,26 +96,28 @@ clean:
 # ── Help ──────────────────────────────────────────────────────────────
 
 help:
-	@echo "SentinelFlow — Makefile (Phases 1-3)"
+	@echo "SentinelFlow — Makefile (run from sentinel-flow/; never 'sudo make')"
 	@echo ""
-	@echo "Targets:"
-	@echo "  make              Build the C sensor"
-	@echo "  make test         Run sensor on test DNS PCAP"
-	@echo "  make test-http    Run sensor on test HTTP PCAP"
-	@echo "  make test-tls     Run sensor on test TLS PCAP"
-	@echo "  make daemon       Run the Phase 2 ingestion daemon"
-	@echo "  make dashboard    Print the 6 query panels (SQLite)"
-	@echo "  make dashboard-web  Serve the panels on http://127.0.0.1:8080"
-	@echo "  make test-engine  Run daemon unit tests"
-	@echo "  make stack-up     Start ClickHouse + Grafana (docker compose)"
-	@echo "  make test-sensor  Sensor unit + PCAP regression tests"
-	@echo "  make fetch-data   Download MTA training + holdout captures"
-	@echo "  make dataset      Build labeled training set (sensor -> ZMQ)"
-	@echo "  make train        Train, cross-validate, export ONNX"
-	@echo "  make holdout      End-to-end evaluation on held-out captures"
-	@echo "  make clean        Remove build artifacts"
+	@echo "Build:"
+	@echo "  make / make sensor   Build sensor, zmq_sink and the C unit tests (sensor-c/build)"
+	@echo "  make clean           Delete sensor-c/build (next build starts from scratch)"
+	@echo "  make runtime-venv    Create engine-ml/.venv-runtime (numpy + onnxruntime) for the ML model"
+	@echo "Run:"
+	@echo "  make daemon          Daemon with default options; ARGS=\"...\" adds options"
+	@echo "  make dashboard       Dashboard tables in the terminal (SQLite); ARGS=\"...\" adds options"
+	@echo "  make dashboard-web   Dashboard web page on http://127.0.0.1:8080"
+	@echo "  make stack-up        Start ClickHouse + Grafana (docker compose up -d)"
+	@echo "  make stack-down      Stop them (data is kept)"
+	@echo "Test:"
+	@echo "  make test-sensor     C unit tests + PCAP regression tests"
+	@echo "  make test-engine     Daemon + mitigator unit tests"
+	@echo "  make verify-closed-loop  Replay -> model -> nftables block, in throwaway namespaces (sudo)"
+	@echo "  make test / test-http / test-tls   Run the sensor on one test capture"
+	@echo "Model:"
+	@echo "  make fetch-data      Download MTA training + holdout captures (large: use Colab)"
+	@echo "  make dataset         Build the labeled training set (sensor -> zmq_sink)"
+	@echo "  make train           Train, cross-validate, export ONNX (TRAIN_PY=...)"
+	@echo "  make holdout         Evaluate on the 5 held-out captures through the daemon"
+	@echo "  make phase3          dataset + train + holdout"
 	@echo ""
-	@echo "Manual usage:"
-	@echo "  ./sensor-c/build/sensor -r file.pcap"
-	@echo "  ./sensor-c/build/sensor -i eth0"
-	@echo "  ./sensor-c/build/sensor -h"
+	@echo "Full explanation: README.md, section 'How to run it'."

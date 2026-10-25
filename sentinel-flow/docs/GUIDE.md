@@ -243,6 +243,8 @@ Each entry: **what it is** → **why it's used here** → *where in the project*
 
 ## 7. The project's own programs and scripts
 
+How to run each one, with every option and `make` target: [README, "How to run it"](../../README.md#how-to-run-it).
+
 | File | What it does |
 |---|---|
 | `sensor-c/build/sensor` | The packet sensor. `-i eth0` = live capture (needs root), `-r file.pcap` = replay a recording, `-A 60` = report long flows every 60 s. |
