@@ -91,7 +91,12 @@ grep -E "scorer:|mitigation:" "$LOGS/daemon-$STAMP.log" | sed 's/^/  /'
 if [[ $SERVE -eq 1 ]]; then
     setsid "$PY" "$ROOT/engine-ml/query_dashboard.py" --db "$DATA/sentinel_flows.db" --serve --port 8080 2> "$LOGS/dashboard-$STAMP.log" &
     PIDS+=($!)
-    echo "dashboard: http://127.0.0.1:8080 on this machine (from another machine: ssh -L 8080:127.0.0.1:8080 ...)"
+    sleep 1                      # it exits at once if port 8080 is taken or the DB is missing
+    if kill -0 "$!" 2>/dev/null; then
+        echo "dashboard: http://127.0.0.1:8080 on this machine (from another machine: ssh -L 8080:127.0.0.1:8080 ...)"
+    else
+        echo "warning: dashboard did not start: $(tail -1 "$LOGS/dashboard-$STAMP.log")"
+    fi
 fi
 
 echo "capturing on $IFACE (active timeout ${ACTIVE}s) — Ctrl+C to stop"

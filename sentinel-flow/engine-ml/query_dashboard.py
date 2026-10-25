@@ -48,41 +48,51 @@ FROM sentinel.network_flows
 GROUP BY app_protocol
 ORDER BY flows DESC, app_protocol""",
     },
+    # Panels 2-4 are capped at 100 rows: without a limit they list every flow,
+    # and the web page (reloaded every 10 s) keeps growing during a live run.
     {
-        "title": "2. JA4 TLS Fingerprints",
+        "title": "2. JA4 TLS Fingerprints (newest 100 TLS flows)",
         "sqlite": """\
-SELECT ja4_client,
-       src_ip || ':' || src_port || ' -> ' || dst_ip || ':' || dst_port AS flow,
-       app_protocol
-FROM network_flows
-WHERE ja4_client NOT IN ('', 'N/A')
+SELECT ja4_client, flow, app_protocol
+FROM (SELECT ja4_client, first_seen_us, app_protocol,
+             src_ip || ':' || src_port || ' -> ' || dst_ip || ':' || dst_port AS flow
+      FROM network_flows
+      WHERE ja4_client NOT IN ('', 'N/A')
+      ORDER BY first_seen_us DESC
+      LIMIT 100)
 ORDER BY ja4_client, first_seen_us""",
         "clickhouse": """\
-SELECT ja4_client,
-       concat(src_ip, ':', toString(src_port), ' -> ',
-              dst_ip, ':', toString(dst_port)) AS flow,
-       app_protocol
-FROM sentinel.network_flows
-WHERE ja4_client NOT IN ('', 'N/A')
+SELECT ja4_client, flow, app_protocol
+FROM (SELECT ja4_client, first_seen_us, app_protocol,
+             concat(src_ip, ':', toString(src_port), ' -> ',
+                    dst_ip, ':', toString(dst_port)) AS flow
+      FROM sentinel.network_flows
+      WHERE ja4_client NOT IN ('', 'N/A')
+      ORDER BY first_seen_us DESC
+      LIMIT 100)
 ORDER BY ja4_client, first_seen_us""",
     },
     {
-        "title": "3. High-Risk Security Alerts (ndpi_risk_mask > 0)",
+        # Same rule as the summary's is_alert count and the Grafana alerts
+        # panel. Since Part 6 most nDPI risks no longer raise an alert.
+        "title": "3. High-Risk Security Alerts (is_alert = 1, top 100 by ml_anomaly_score)",
         "sqlite": """\
 SELECT ndpi_risk_mask, ndpi_risk_str, src_ip, dst_ip, app_protocol,
        ml_anomaly_score, is_alert
 FROM network_flows
-WHERE ndpi_risk_mask > 0
-ORDER BY ml_anomaly_score DESC, first_seen_us""",
+WHERE is_alert = 1
+ORDER BY ml_anomaly_score DESC, first_seen_us
+LIMIT 100""",
         "clickhouse": """\
 SELECT ndpi_risk_mask, ndpi_risk_str, src_ip, dst_ip, app_protocol,
        ml_anomaly_score, is_alert
 FROM sentinel.network_flows
-WHERE ndpi_risk_mask > 0
-ORDER BY ml_anomaly_score DESC, first_seen_us""",
+WHERE is_alert = 1
+ORDER BY ml_anomaly_score DESC, first_seen_us
+LIMIT 100""",
     },
     {
-        "title": "4. Flow Telemetry & Timestamp Verification",
+        "title": "4. Flow Telemetry & Timestamp Verification (mismatches first, then newest 100)",
         "sqlite": """\
 SELECT src_ip, dst_ip, app_protocol, pkt_count,
        first_seen_us, last_seen_us,
@@ -93,7 +103,8 @@ SELECT src_ip, dst_ip, app_protocol, pkt_count,
                  = CAST(ROUND(flow_duration_ms * 1000) AS INTEGER)
             THEN 'OK' ELSE 'MISMATCH' END              AS verdict
 FROM network_flows
-ORDER BY first_seen_us""",
+ORDER BY verdict = 'OK', first_seen_us DESC
+LIMIT 100""",
         "clickhouse": """\
 SELECT src_ip, dst_ip, app_protocol, pkt_count,
        first_seen_us, last_seen_us,
@@ -104,7 +115,8 @@ SELECT src_ip, dst_ip, app_protocol, pkt_count,
             = toInt64(round(flow_duration_ms * 1000)),
           'OK', 'MISMATCH')                            AS verdict
 FROM sentinel.network_flows
-ORDER BY first_seen_us""",
+ORDER BY verdict = 'OK', first_seen_us DESC
+LIMIT 100""",
     },
 ]
 
@@ -131,17 +143,32 @@ LIMIT 15""",
 PANELS.append({
     "title": "6. Active Kernel Mitigations & XDP Drop Counters (Phase 4)",
     "optional_table": "blocked_ips / sentinel.mitigations (daemon --mitigate ...)",
+    # The daemon writes "expired" only while it is running. A block whose
+    # timeout has passed (daemon stopped or restarted) is shown as expired
+    # using the latest expiry time from its block / counters events.
     "sqlite": """\
 SELECT ip, backend, status, reason, ROUND(score, 3) AS score, flow,
        dropped_pkts, dropped_bytes,
        datetime(first_blocked_us / 1000000, 'unixepoch') AS first_blocked
-FROM blocked_ips
+FROM (SELECT b.ip, b.backend, b.reason, b.score, b.flow, b.dropped_pkts,
+             b.dropped_bytes, b.first_blocked_us,
+             CASE WHEN b.status = 'active'
+                       AND e.until_us < CAST(strftime('%s', 'now') AS INTEGER) * 1000000
+                  THEN 'expired' ELSE b.status END AS status
+      FROM blocked_ips b
+      LEFT JOIN (SELECT ip, MAX(ts_us + timeout_s * 1000000) AS until_us
+                 FROM mitigation_events
+                 WHERE action IN ('block', 'counters')
+                 GROUP BY ip) e ON e.ip = b.ip)
 ORDER BY (status = 'active') DESC, dropped_pkts DESC, first_blocked_us, ip""",
     "clickhouse": """\
 SELECT ip,
        argMax(backend, ts_us) AS backend,
        multiIf(argMax(action, ts_us) = 'expire', 'expired',
-               argMax(action, ts_us) = 'unblock', 'unblocked', 'active') AS status,
+               argMax(action, ts_us) = 'unblock', 'unblocked',
+               maxIf(toInt64(ts_us) + timeout_s * 1000000, action IN ('block', 'counters'))
+                 < toUnixTimestamp64Micro(now64(6)), 'expired',
+               'active') AS status,
        argMaxIf(reason, ts_us, action = 'block') AS reason,
        round(argMaxIf(score, ts_us, action = 'block'), 3) AS score,
        argMaxIf(flow, ts_us, action = 'block') AS flow,
@@ -205,7 +232,21 @@ class SQLiteBackend:
 
     def run(self, sql):
         # Read-only connection per query: safe under a live WAL writer.
-        db = sqlite3.connect(f"file:{self.path}?mode=ro", uri=True)
+        uri = f"file:{urllib.parse.quote(self.path)}?mode=ro"
+        try:
+            return self._query(uri, sql)
+        except sqlite3.OperationalError as e:
+            # A WAL database needs a -shm file beside it. When the daemon has
+            # stopped (it removes that file) and this user can't create it,
+            # e.g. the daemon ran as root and owns the folder, read the file as
+            # a fixed snapshot instead. Nothing is writing to it at that point.
+            if "readonly" not in str(e) and "unable to open" not in str(e):
+                raise
+            return self._query(uri + "&immutable=1", sql)
+
+    @staticmethod
+    def _query(uri, sql):
+        db = sqlite3.connect(uri, uri=True)
         try:
             cur = db.execute(sql)
             return [d[0] for d in cur.description], cur.fetchall()
@@ -362,7 +403,11 @@ def serve(backend, host, port):
         def log_message(self, f, *a):
             sys.stderr.write("[dashboard] " + (f % a) + "\n")
 
-    httpd = ThreadingHTTPServer((host, port), Handler)
+    try:
+        httpd = ThreadingHTTPServer((host, port), Handler)
+    except OSError as e:
+        sys.exit(f"[dashboard] cannot listen on {host}:{port}: {e.strerror} "
+                 f"(is another program using the port? try --port {port + 1})")
     print(f"[dashboard] serving {backend.label} on http://{host}:{port}/",
           file=sys.stderr, flush=True)
     try:
@@ -398,4 +443,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BrokenPipeError:
+        # Output piped into head/less, which exited early: stop quietly.
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(1)
