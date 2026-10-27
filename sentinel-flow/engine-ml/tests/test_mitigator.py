@@ -69,6 +69,35 @@ class Policy(unittest.TestCase):
         d = self.p.decide(rec(score=0.85, mask=1 << features.SEVERE_RISKS["susp_dga"]))
         self.assertEqual((d.action, d.reason), ("block", "severe_risk"))
 
+    def test_dga_alone_needs_the_model_to_agree(self):
+        # nDPI flags random-looking legitimate names (CloudFront, googlevideo):
+        # 12 false blocks/hour in the 2018 Windows capture, scores 0.00-0.86.
+        dga = 1 << features.SEVERE_RISKS["susp_dga"]
+        self.assertEqual(self.p.decide(rec(score=0.15, mask=dga)).action, "skip")
+        d = self.p.decide(rec(score=0.85, mask=dga, dst="203.0.113.9"))
+        self.assertEqual((d.action, d.reason), ("block", "severe_risk"))
+        both = dga | 1 << features.SEVERE_RISKS["malware_host_contacted"]
+        self.assertEqual(self.p.decide(rec(score=0.1, mask=both, dst="203.0.113.10")).action, "block")
+
+    def test_dns_server_is_never_the_target(self):
+        # A DNS query flagged by nDPI (DGA, risky domain) or the model made the
+        # resolver the target (responder first): 1.1.1.1 / 1.0.0.1 and a
+        # university resolver were "blocked" in the benign captures.
+        q = dict(rec(src="10.1.2.3", dst="1.0.0.1", score=0.99,
+                     mask=1 << features.SEVERE_RISKS["risky_domain"]),
+                 src_port=51000, dst_port=53, protocol=17, app_protocol="DNS")
+        d = self.p.decide(q)
+        self.assertEqual((d.action, d.ip), ("skip", None))
+        self.assertIn("1.0.0.1: DNS server of this flow", d.detail)
+        dot = dict(q, dst_port=853, app_protocol="TLS")                 # DNS over TLS
+        self.assertEqual(self.p.decide(dot).action, "skip")
+        doh = dict(q, dst_port=443, app_protocol="DoH_DoT")             # DNS over HTTPS
+        self.assertEqual(self.p.decide(doh).action, "skip")
+        # The same risk on an ordinary HTTPS flow still blocks the server.
+        web = dict(q, dst_ip="203.0.113.11", dst_port=443, app_protocol="TLS")
+        d = self.p.decide(web)
+        self.assertEqual((d.action, d.ip), ("block", "203.0.113.11"))
+
     def test_heuristic_scores_never_block(self):
         for model in ("heuristic_v1", ""):
             self.assertEqual(self.p.decide(rec(score=0.99, model=model)).action, "skip")
@@ -79,6 +108,8 @@ class Policy(unittest.TestCase):
         unidirectional = 1 << 46          # common benign-ish risk
         self.assertEqual(self.p.decide(rec(score=0.1, mask=unidirectional)).action, "skip")
         for name, bit in features.SEVERE_RISKS.items():
+            if name == "susp_dga":
+                continue                  # needs the model to agree, see the next test
             with self.subTest(name):
                 d = self.p.decide(rec(score=0.1, mask=1 << bit))
                 self.assertEqual((d.action, d.reason), ("block", "severe_risk"))

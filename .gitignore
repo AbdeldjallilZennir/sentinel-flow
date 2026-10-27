@@ -41,3 +41,8 @@ sentinel-flow/mitigation-ebpf/*.o
 sentinel-flow/mitigation-ebpf/xdp_ctl
 
 sentinel-flow/engine-ml/.venv-runtime/
+
+# Local test data: downloaded captures (with IOC text) and own packet captures.
+# Never commit: large, and uni_captures/ holds personal traffic metadata.
+downloads/
+uni_captures/

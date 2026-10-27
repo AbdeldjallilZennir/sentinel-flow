@@ -222,7 +222,7 @@ sensor-c/build/sensor -r capture.pcap -v     # also print each flow's JSON
 | `-r FILE` | read a capture file (pcap or pcapng) | – |
 | `-i IFACE` | capture live from an interface (needs root or `CAP_NET_RAW`) | – |
 | `-z ENDPOINT` | ZeroMQ address to send flows to; must match the daemon's `--endpoint` | `ipc:///tmp/ndpi_flows.sock` |
-| `-A SEC` | active timeout: send a snapshot of a connection still open after SEC seconds, then every SEC seconds (0 = off, max 86400) | 60 |
+| `-A SEC` | active timeout: send a snapshot of a connection still open after SEC seconds, then every SEC seconds (0 = off, max 86400). Values below 30 (the idle timeout) also snapshot short flows that already ended, so the sensor warns | 60 |
 | `-v` | also print every flow record to stdout | off |
 | `-h` | help | |
 
@@ -395,7 +395,7 @@ Run `make` from `sentinel-flow/`. **Don't use `sudo make`:** it would build as r
 | `make holdout` | Builds the sensor, replays the 5 holdout captures through the real daemon → `engine-ml/models/evaluation_holdout.json` | `fetch-data` |
 | `make phase3` | `dataset` + `train` + `holdout` | |
 
-The network-namespace test of the nftables backend alone isn't a make target: `python3 engine-ml/tests/lab_nftables_netns.py` (needs passwordless `sudo`).
+Two live tests aren't make targets (both need passwordless `sudo`): `python3 engine-ml/tests/lab_nftables_netns.py` checks the nftables backend in network namespaces, and `python3 sensor-c/tests/live_quiet_interface.py` checks that on an idle interface a flow is still exported after the 30 s idle timeout and Ctrl+C stops the sensor at once.
 
 ### 6. Rebuilding after a change
 
@@ -504,7 +504,7 @@ python3 engine-ml/models/compare_holdout.py OLD_evaluation_holdout.json engine-m
   - The holdout captures were labeled before the model saw them.
   - Labels distinguish malicious, benign and ambiguous. Ambiguous means shared services abused by malware (Dropbox, Telegram, IP-lookup sites, compromised sites), which are excluded.
 - **Alert rule (`is_alert`):** ML score ≥ 0.80 or one of 6 severe nDPI risks (DGA domain, risky domain, malicious fingerprint or certificate, possible exploit, malware host contacted). This `severe` policy is the default since Part 6. In Part 3, alerting on *any* nDPI risk flagged ~18 % of real Windows background flows.
-- **Blocking policy (per remote IP, Part 6):** one flow ≥ 0.95 from a trained model, or 2 flows ≥ 0.80 to the same IP within an hour, or a severe nDPI risk. A separate rule blocks the *source* of a port scan or host sweep. The ML model can't see scans: each probe looks harmless on its own. `--block-high-score 0.80 --block-repeat 1` restores the per-flow rule.
+- **Blocking policy (per remote IP, Part 6):** one flow ≥ 0.95 from a trained model, or 2 flows ≥ 0.80 to the same IP within an hour, or a severe nDPI risk (the DGA-domain risk alone also needs ML ≥ 0.80, because nDPI raises it on random-looking CDN names too). The DNS server of a DNS / DoT / DoH flow is never a target: blocking a resolver takes the machine offline. A separate rule blocks the *source* of a port scan or host sweep. The ML model can't see scans: each probe looks harmless on its own. `--block-high-score 0.80 --block-repeat 1` restores the per-flow rule.
 
 **Blocking on the 5 holdout infections (current model `203d33a1`, remote IPs):**
 

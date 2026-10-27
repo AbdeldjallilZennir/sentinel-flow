@@ -16,7 +16,13 @@ Policy (decisions() / decide()), decided per remote IP, not per flow:
                      snapshots of one connection count as one flow.
       - severe_risk: ndpi_risk_mask has a "severe" bit (features.SEVERE_MASK:
                      DGA domain, risky domain, malicious fingerprint,
-                     malicious cert SHA-1, possible exploit, malware host)
+                     malicious cert SHA-1, possible exploit, malware host).
+                     The DGA bit ALONE also needs ml_anomaly_score >= threshold:
+                     nDPI raises it on random-looking legitimate names too
+                     (CloudFront, googlevideo, ad-tech; 12 false blocks/hour on
+                     a 2018 Windows capture). Cost: a malware DGA server the
+                     model scores low is alerted but not blocked (1 of the
+                     2026-10-27 RAT cases).
     Records scored by the Phase 2 heuristic are not trusted to block.
     Any other nDPI risk never blocks on its own: in Phase 3 the "any risk"
     rule alerted on 18 % of real Windows background flows (docs/REPORT.md, Part 3 §8.4).
@@ -41,6 +47,12 @@ Policy (decisions() / decide()), decided per remote IP, not per flow:
   * Target: the remote peer, never a protected address. For ML / severe
     triggers the responder (dst_ip) is preferred; src_ip is used only if
     dst_ip is protected. Scans only ever target the source.
+    The answering side of a DNS / DNS-over-TLS / DoH flow (port 53 / 853,
+    or nDPI DNS / DoH_DoT) is never a target: a flagged query is about the
+    name asked, and blocking the resolver takes the host offline (it
+    happened to 1.1.1.1, 1.0.0.1 and a university resolver in benign
+    captures). Trade-off: a DNS tunnel that talks straight to an attacker's
+    DNS server is not blocked by these rules.
     If the chosen endpoints are protected, nothing is blocked (the decision
     is still audited as skip_protected).
   * Protected addresses:
@@ -80,6 +92,7 @@ SWEEP_MAX_PKTS = 3
 SCAN_WINDOW_S = 60
 SCAN_COOLDOWN_S = 600
 PEER_MEMORY_S = 24 * 3600   # how long a server this network used stays "known"
+DNS_PORTS = (53, 853)       # DNS, DNS over TLS: the answering side is never a target
 RFC1918 = ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
 DEFAULT_PROTECTED = RFC1918 + ("127.0.0.0/8",)
 UNTRUSTED_SCORERS = {"", "heuristic_v1"}
@@ -273,7 +286,22 @@ class BlockPolicy:
         if not severe:
             return None
         names = [n for n, b in features.SEVERE_RISKS.items() if severe >> b & 1]
+        if names == ["susp_dga"] and self._ml_suspect(rec) is None:
+            # nDPI's DGA guess also fires on random-looking legitimate names
+            # (CloudFront, googlevideo, ad-tech): alone, it needs the model to agree.
+            return None
         return "ndpi severe risk: " + ",".join(names)
+
+    @staticmethod
+    def _dns_server(rec):
+        """The answering side of a DNS / DNS-over-TLS / DoH flow, or None."""
+        for ip, port in ((rec.get("dst_ip"), rec.get("dst_port")),
+                         (rec.get("src_ip"), rec.get("src_port"))):
+            if port in DNS_PORTS:
+                return ip
+        if str(rec.get("app_protocol") or "").split(".")[0] in ("DNS", "DoH_DoT"):
+            return rec.get("dst_ip")
+        return None
 
     def _flow_decision(self, rec):
         """ML / severe-risk decision for the flow's remote peer, or None."""
@@ -281,9 +309,14 @@ class BlockPolicy:
         severe = self._severe(rec)
         if score is None and severe is None:
             return None
+        dns_server = self._dns_server(rec)
         target, reasons = None, []
         for ip in (rec["dst_ip"], rec["src_ip"]):          # responder first
             why = self.why_protected(ip)
+            if why is None and ip == dns_server:
+                # A flagged DNS query is about the name asked, not the resolver
+                # that answers it; blocking the resolver takes the host offline.
+                why = "DNS server of this flow"
             if why is None:
                 target = ip
                 break
