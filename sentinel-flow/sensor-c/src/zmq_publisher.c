@@ -100,6 +100,17 @@ int zmq_publisher_init(const char *endpoint)
     if (zmq_connect(zmq_sock, endpoint) != 0) {
         fprintf(stderr, "[zmq] zmq_connect(%s) failed: %s\n",
                 endpoint, zmq_strerror(zmq_errno()));
+        /* zmq_ctx_destroy() waits for every socket of the context: the
+         * monitor socket must be closed too, or the sensor hangs here
+         * instead of exiting with an error (e.g. an IPC path > 107 chars). */
+        int zero = 0;
+        if (zmq_mon) {
+            zmq_socket_monitor(zmq_sock, NULL, 0);
+            zmq_setsockopt(zmq_mon, ZMQ_LINGER, &zero, sizeof(zero));
+            zmq_close(zmq_mon);
+            zmq_mon = NULL;
+        }
+        zmq_setsockopt(zmq_sock, ZMQ_LINGER, &zero, sizeof(zero));
         zmq_close(zmq_sock);
         zmq_ctx_destroy(zmq_ctx);
         zmq_sock = NULL;

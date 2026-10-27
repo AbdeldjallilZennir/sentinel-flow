@@ -30,7 +30,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <inttypes.h>
+#include <poll.h>
 #include <signal.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -68,6 +70,8 @@ static uint64_t total_flows        = 0;
 static uint64_t exported_flows     = 0;   /* delivered to the ZMQ queue */
 static uint64_t dropped_flows      = 0;   /* ZMQ send failed */
 static uint64_t snapshot_records   = 0;   /* active-timeout records sent */
+static uint64_t repeats_skipped    = 0;   /* records identical to the last one sent */
+static pcap_t  *capture_handle     = NULL; /* for pcap_breakloop() in the signal handler */
 static uint64_t active_timeout_us  = (uint64_t)FLOW_ACTIVE_TIMEOUT_SEC * 1000000ULL;
 static uint64_t last_housekeeping_us = 0;
 static bool     live_capture       = false;
@@ -82,6 +86,19 @@ static void signal_handler(int sig)
 {
     (void)sig;
     running = 0;
+    if (capture_handle)
+        pcap_breakloop(capture_handle);   /* documented as safe in a signal handler */
+}
+
+/* FNV-1a over the serialized record; 0 is reserved for "nothing sent yet". */
+static uint64_t record_hash(const char *s)
+{
+    uint64_t h = 1469598103934665603ULL;
+    for (; *s; s++) {
+        h ^= (unsigned char)*s;
+        h *= 1099511628211ULL;
+    }
+    return h ? h : 1;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
@@ -185,6 +202,15 @@ static void emit_flow(flow_entry_t *entry)
     cJSON_AddNumberToObject(root, "last_seen_us",  (double)entry->last_seen_us);
 
     char *json_str = cJSON_PrintUnformatted(root);
+    /* A final record right after an active-timeout snapshot, with no packet
+     * in between, is byte-for-byte the snapshot again (2-6 % of records at the default
+     * -A 60, 22 % at -A 15). Send each distinct record once. */
+    uint64_t h = json_str ? record_hash(json_str) : 0;
+    if (json_str && h == entry->last_emit_hash) {
+        repeats_skipped++;
+        cJSON_free(json_str);
+        json_str = NULL;
+    }
     if (json_str) {
         if (zmq_publisher_send(json_str, send_patience_ms) != 0) {
             dropped_flows++;
@@ -193,6 +219,7 @@ static void emit_flow(flow_entry_t *entry)
                         "or absent); flow dropped. Further drops are counted.\n");
         } else {
             exported_flows++;
+            entry->last_emit_hash = h;   /* only a delivered record counts as sent */
         }
         if (verbose)
             printf("%s\n", json_str);
@@ -638,6 +665,23 @@ int main(int argc, char *argv[])
         fprintf(stderr, "[sensor] capturing live on: %s\n", iface);
         live_capture = true;
     }
+    capture_handle = handle;
+
+    /* Live: pcap_dispatch() can block indefinitely on a quiet interface,
+     * which stopped idle expiry, snapshots and Ctrl+C until the next packet.
+     * Use a non-blocking handle and wait in poll() with a 1 s timeout. */
+    struct pollfd capture_fd = { .fd = -1, .events = POLLIN };
+    if (!pcap_file) {
+        capture_fd.fd = pcap_get_selectable_fd(handle);
+        if (capture_fd.fd < 0) {
+            fprintf(stderr, "[sensor] warning: capture has no selectable fd; "
+                    "housekeeping waits for packets\n");
+        } else if (pcap_setnonblock(handle, 1, errbuf) != 0) {
+            fprintf(stderr, "[sensor] warning: pcap_setnonblock: %s; "
+                    "housekeeping waits for packets\n", errbuf);
+            capture_fd.fd = -1;
+        }
+    }
 
     datalink = pcap_datalink(handle);
     {
@@ -662,15 +706,29 @@ int main(int argc, char *argv[])
 
     fprintf(stderr, "[sensor] starting packet capture...\n");
 
-    if (active_timeout_us)
+    if (active_timeout_us) {
         fprintf(stderr, "[sensor] active timeout: %llu s (snapshots of long flows)\n",
                 (unsigned long long)(active_timeout_us / 1000000ULL));
-    else
+        if (active_timeout_us < (uint64_t)FLOW_EXPIRE_SEC * 1000000ULL)
+            fprintf(stderr, "[sensor] warning: -A below the %d s idle timeout also "
+                    "snapshots short flows that have already ended, so they get two "
+                    "records; use 0 or >= %d\n", FLOW_EXPIRE_SEC, FLOW_EXPIRE_SEC);
+    } else
         fprintf(stderr, "[sensor] active timeout: off\n");
 
     while (running) {
+        if (capture_fd.fd >= 0) {
+            int pr = poll(&capture_fd, 1, 1000);
+            if (pr < 0 && errno != EINTR) {
+                perror("[sensor] poll");
+                break;
+            }
+            if (!running)
+                break;
+        }
         int ret = pcap_dispatch(handle, 64, packet_callback, NULL);
         if (ret == 0 && pcap_file) break;
+        if (ret == PCAP_ERROR_BREAK) break;
         if (!pcap_file) {
             /* Live: also run housekeeping on the wall clock, so idle
              * expiry and snapshots happen when no packets arrive. */
@@ -703,13 +761,16 @@ int main(int argc, char *argv[])
         "║  Flows exported:    %-15lu ║\n"
         "║  Flows dropped:     %-15lu ║\n"
         "║  Snapshot records:  %-15lu ║\n"
+        "║  Repeats skipped:   %-15lu ║\n"
         "╚══════════════════════════════════════╝\n",
         (unsigned long)total_packets,
         (unsigned long)total_flows,
         (unsigned long)exported_flows,
         (unsigned long)dropped_flows,
-        (unsigned long)snapshot_records);
+        (unsigned long)snapshot_records,
+        (unsigned long)repeats_skipped);
 
+    capture_handle = NULL;
     pcap_close(handle);
     zmq_publisher_destroy(ZMQ_DRAIN_MS);
     ndpi_wrapper_destroy();

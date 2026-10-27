@@ -67,6 +67,7 @@ typedef struct flow_entry {
     /* ── Export control ──────────────────────────────────────────── */
     bool     exported;        /* final record sent (idle/flush)      */
     uint64_t last_export_us;  /* last active-timeout snapshot, 0=none */
+    uint64_t last_emit_hash;  /* hash of the last record sent, 0=none */
 } flow_entry_t;
 
 /* ── Public API ──────────────────────────────────────────────────── */

@@ -130,6 +130,37 @@ class SensorPcapTests(unittest.TestCase):
         self.assertEqual(sorted((f["src_port"], f["dst_port"], f["pkt_count"]) for f in flows),
                          [(0, 0, 120), (4500, 4500, 60)])
 
+    def test_no_repeat_record_after_snapshot(self):
+        # Flow A: one DNS query at t=0 (nDPI is done after one packet).
+        # Flow B: one packet a second for 40 s, which drives the 1 s
+        # housekeeping. With -A 15, A gets a snapshot at ~15 s while still
+        # inside the 30 s idle window; its final record at the end of the
+        # file is byte-for-byte the same and used to be sent again (2-6 % of
+        # records at the default -A 60, 22 % at -A 15).
+        query = (b"\x12\x34\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00"
+                 b"\x07example\x03com\x00\x00\x01\x00\x01")
+        dns = ([10, 0, 0, 1], [10, 0, 0, 2], 40000, 53)
+        recs = [(T0, udp_frame(*dns, query))]
+        recs += [(T0 + 1 + i, udp_frame(*B, b"x" * 60)) for i in range(40)]
+        flows = run_sensor(self.pcap("repeat.pcap", recs), "-A", "15")
+        a = [f for f in flows if f["src_port"] == 40000]
+        self.assertEqual([(f["pkt_count"], f["app_protocol"]) for f in a], [(1, "DNS")])
+        dumps = [json.dumps(f, sort_keys=True) for f in flows]
+        self.assertEqual(len(dumps), len(set(dumps)), "a record was sent twice")
+        b = [f for f in flows if f["src_port"] == 40001]
+        self.assertEqual([f["pkt_count"] for f in b], [15, 30, 40],
+                         "the long flow keeps its snapshots")
+
+    def test_bad_endpoint_exits_instead_of_hanging(self):
+        # A failed zmq_connect() left the monitor socket open, so
+        # zmq_ctx_destroy() waited forever. IPC paths are limited to 107 chars.
+        path = self.pcap("one.pcap", [(T0, udp_frame(*A, b"x" * 20))])
+        ep = "ipc:///tmp/" + "x" * 200 + ".sock"
+        p = subprocess.run([SENSOR, "-r", path, "-z", ep], capture_output=True,
+                           env=ENV, timeout=20)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertIn(b"ZeroMQ init failed", p.stderr)
+
     def test_out_of_order_timestamps_no_underflow(self):
         # Packet times: 10, 11, 5 (goes backwards), 12  (seconds after T0)
         times = [10, 11, 5, 12]
