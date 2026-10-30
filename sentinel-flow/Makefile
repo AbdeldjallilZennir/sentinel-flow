@@ -46,6 +46,7 @@ dashboard-web:
 	@python3 engine-ml/query_dashboard.py --serve --port 8080 $(ARGS)
 
 test-engine:
+	@python3 engine-ml/tests/test_features.py
 	@python3 engine-ml/tests/test_daemon.py
 	@python3 engine-ml/tests/test_mitigator.py
 

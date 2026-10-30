@@ -15,6 +15,7 @@ For a plain-language explanation of the project and every tool, read [GUIDE.md](
 - [Part 6](#part-6) — Severe alert default, per-IP blocking rule, scan detection, dashboard events (2026-10-24)
 - [Part 7](#part-7) — 23 more training cases, retrained model (2026-10-24)
 - [Part 8](#part-8) — Code review: 15 bugs found and fixed (2026-10-25)
+- [Part 9](#part-9) — Conversation timing features (`fv2`), retrain (2026-10-27)
 
 ---
 
@@ -3319,3 +3320,74 @@ Each bug was reproduced, or shown with a new test, before it was fixed, and chec
 - **That the system can't be abused with forged packets.** See §6: the lured-connection gap, cold start, and single-packet severe / ML triggers.
 - **That `run_live.sh --block` was tested end to end live.**
 - **That the code is free of bugs.** The review covered the code files once; docs and data were not reviewed.
+
+---
+
+<a id="part-9"></a>
+
+## Part 9 — Conversation timing features (`fv2`), retrain
+
+Date: 2026-10-27. Model `lgbm+iforest-fv2-58fb9fc3` replaces `203d33a1`. Plan items P0.3, P0.5 and P2 in `IMPROVEMENT_PLAN.md`.
+
+### 0. Summary
+
+- Until now the model scored each flow alone. A beacon that checks in every 4 s with the same bytes each time looked like 97 unrelated small flows.
+- `features.py` now keeps a short history per **conversation** (this host, server IP, server port, protocol) and adds 5 features about the **earlier** connections in it: how regular the gaps between their starts are, the typical gap, and whether their sizes repeat.
+- Same code in training and in the daemon, fed in sensor export order, with time taken from the flow records. Checked: scores from the live path and the training path match to 7 × 10⁻⁷ on 3 training captures (1,701 flows).
+- Results, all at the same 1 % calibrated false-alarm budget:
+
+| | `203d33a1` (fv1) | `58fb9fc3` (fv2) |
+|---|---|---|
+| Cross-validation, malicious flows caught (5 seeds) | 0.64 ± 0.08 | **0.79 ± 0.04** |
+| Cross-validation, C2 servers with ≥ 1 alert (of 186, 5 seeds) | 128 ± 4 | 124 ± 4 |
+| Holdout: infections / endpoints alerted | 5/5, 17/23 | 5/5, **18/23** |
+| Holdout: malicious flows caught / false alerts | 27 % / 12 | **71 %** / 10 |
+| Holdout: per-IP blocks (malicious / benign) | 14/23 / 2 | 14/23 / 2 |
+| Real benign captures, dry-run blocks per hour (own PC ×2, Windows 7) | 19, 11, 85 | 22, 9, 67 |
+| 5 RAT cases (`NEW_DATA_REVIEW.md`): cases with the C2 blocked | 4/5 | 4/5 |
+
+### 1. Definitions
+
+- **Conversation:** `(src_ip, dst_ip, dst_port, protocol)`, only when the server is an Internet address (`features.is_internet`: global and not multicast; Python's `is_global` alone counts mDNS and SSDP as global).
+- **Connection:** one client source port inside a conversation. The sensor splits a long idle TCP connection into a new record every time it is quiet for 30 s; Chrome's 45 s keep-alive to `mtalk.google.com` produced 63 records from one connection, all looking periodic. Same source port = same connection, so they now count once (P0.5). Snapshots of one flow update that connection instead of adding one.
+- **History:** the last 20 connections per conversation, 24 h expiry, at most 50,000 conversations (least recently used dropped). Only connections that **started before** the scored one count.
+
+### 2. The features, and the version that was rejected
+
+The first version (11 features) also gave the model counts (earlier connections, connections in the last 60 s / 300 s) and conversation age. It raised per-flow recall to 0.83 but caught **fewer** C2 servers (115 ± 1 of 186). The reason: in the training captures, benign flows rarely have history (short captures, mostly LAN traffic: 540 of 3,438 benign MTA flows) while C2 almost always does (2,581 of 2,826). The model learned "no earlier connection = benign" and lost servers contacted only once or twice. On a real PC almost every flow has history, so the same shortcut would not hold.
+
+The kept version gives the model only **evidence of a pattern**. Every feature is 0 when there is none, so a first contact and a conversation with no pattern look identical:
+
+| Feature | Value |
+|---|---|
+| `conv_periodicity` | share of gaps within ±20 % of the median gap, rescaled so ≤ 0.5 → 0 and 1 → 1; needs ≥ 3 gaps |
+| `conv_log_beacon_interval_s` | log(1 + median gap) when `conv_periodicity` > 0 |
+| `conv_same_size_ratio` | share of earlier connections with the most common (bytes up, bytes down), only if a pair repeats |
+| `conv_up_regularity`, `conv_pkt_regularity` | max(0, 1 − 4 × CV) of bytes up / packet count across earlier connections |
+
+Counts, age and gap statistics are still computed (`ConversationTracker.stats`) for a later rule-based beacon report (plan P3), but not given to the model.
+
+### 3. What changed per family (cross-validation, seed 42)
+
+- Large gains where C2 beacons over HTTP: Gozi + Cobalt Strike 0.61 → 0.98, XLoader 0.38 → 0.81, Lumma 0.34 → 0.72, SSLoad + Cobalt Strike 0.33 → 0.83.
+- **njRAT is still missed (0.01).** Its features are a textbook beacon (gap 4.0 s, periodicity 1.0, identical sizes), and they push its score up by about +3.5 in log-odds, but it is the only raw-TCP beacon in the training data and the protocol prior wins. More raw-TCP RAT captures (P4.1) and the P3 beacon report are the fixes.
+- Losses: Latrodectus 0.48 → 0.18 per flow, and 4–6 servers contacted once or twice (within the seed spread of ± 4 servers).
+- Holdout: the 404 TDS + Cobalt Strike capture goes from 81 to 1,435 of 2,227 malicious flows caught.
+
+### 4. Live behaviour
+
+- The daemon keeps the history in memory (`OnnxScorer.conversations`); a restart starts it empty, so the first minutes after a restart score like the old model.
+- Training uses `-A 0` (one record per flow), live uses `-A 60` snapshots. A connection longer than 60 s is therefore known to the tracker earlier live than in training. This only affects long connections, and only the history of later ones.
+- `daemon.py --lab-conversations` also tracks private servers, for host-only lab tests (plan P1.2). The model was not trained that way.
+
+### 5. Tests
+
+- `engine-ml/tests/test_features.py` (new, 14): beacon, jittered beacon, irregular history = no history, keep-alive pieces = one connection, snapshot + final record, only earlier connections count, size statistics, Internet-only rule and lab mode, expiry, both caps, `is_internet` on SSDP / LLMNR / mDNS / broadcast.
+- `test_daemon.py`: + history carries across batches (16 tests). `test_mitigator.py`: 38, unchanged.
+- ONNX parity at export: max difference 2.9 × 10⁻⁷, 0 of 12,127 alert decisions differ.
+
+### 6. Must not be said
+
+- That timing features catch raw-TCP RATs: njRAT is still missed.
+- That the false-alarm problem on real PCs is solved: dry-run blocks per hour on the three benign captures went from 115 to 98 in total, still far above the training rate. Benign training data from real hosts (P4.2) is the fix.
+- That C2 server coverage improved in cross-validation: it is within noise (124 ± 4 vs 128 ± 4).

@@ -46,3 +46,4 @@ sentinel-flow/engine-ml/.venv-runtime/
 # Never commit: large, and uni_captures/ holds personal traffic metadata.
 downloads/
 uni_captures/
+sentinel-flow/engine-ml/datasets/mta_lab/

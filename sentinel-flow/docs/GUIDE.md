@@ -77,7 +77,7 @@ A machine-learning model turns these measurements into a score from 0 to 1. When
             ▼
   ┌──────────────────────┐   Plane 2: the DAEMON (Python, engine-ml/daemon.py)
   │ check, score, store  │   - checks each record is valid (23 fields)
-  │                      │   - turns it into 61 numbers ("features")
+  │                      │   - turns it into 66 numbers ("features")
   │                      │   - the ML model gives a score 0..1
   │                      │   - saves to SQLite + JSONL (+ ClickHouse)
   └─────────┬────────────┘
@@ -136,7 +136,7 @@ Details and limits: [REPORT.md Part 8](REPORT.md#part-8).
 
 | Idea | Plain meaning |
 |---|---|
-| **Feature** | One number describing a flow, e.g. "number of packets" or "how regular the timing is". The model sees **61 features** per flow. IP addresses are deliberately *not* features, so the model can't just memorize bad addresses. |
+| **Feature** | One number describing a flow, e.g. "number of packets" or "how regular the timing is". The model sees **66 features** per flow: 61 about the flow itself and 5 about how regular this computer's earlier connections to the same server were. IP addresses are deliberately *not* features, so the model can't just memorize bad addresses. |
 | **Label** | The right answer for a training example: **malicious** (1), **benign** (0), or **ambiguous** (excluded: shared services like Dropbox or IP-lookup sites that malware also uses). |
 | **Training** | Showing the model many labeled flows so it learns which feature patterns mean "malicious". |
 | **Model** | The learned rule set. Here: **LightGBM**, many small decision trees voting together. |
@@ -250,7 +250,7 @@ How to run each one, with every option and `make` target: [README, "How to run i
 | `sensor-c/build/sensor` | The packet sensor. `-i eth0` = live capture (needs root), `-r file.pcap` = replay a recording, `-A 60` = report long flows every 60 s. |
 | `sensor-c/build/zmq_sink` | Receives ZeroMQ messages and prints them for the daemon. |
 | `engine-ml/daemon.py` | Receives, checks, scores and stores flows; with `--mitigate dry-run` or `--mitigate nftables` it also decides and blocks. |
-| `engine-ml/features.py` | Turns a flow record into the 61 numbers the model reads (shared by training and live scoring, so both always match). |
+| `engine-ml/features.py` | Turns a flow record into the 66 numbers the model reads (shared by training and live scoring, so both always match), including the conversation history tracker. |
 | `engine-ml/mitigator.py` | The blocking policy (what to block and why), the nftables backend, the audit log; also a small command tool: `setup`, `list`, `block IP`, `unblock IP`, `teardown`. |
 | `engine-ml/query_dashboard.py` | Terminal or web dashboard, 7 panels (includes "Recent Mitigation & Scan Events"). |
 | `engine-ml/datasets/fetch_mta.py` | Downloads the MTA training and holdout recordings (traffic + IOC text only). |
@@ -269,14 +269,14 @@ How to run each one, with every option and `make` target: [README, "How to run i
 
 ## 8. Current results in plain words
 
-Model `lgbm+iforest-fv1-203d33a1` (Part 7):
+Model `lgbm+iforest-fv2-58fb9fc3` (Part 9):
 
-- **Unseen infections:** all **5 of 5** detected. The model raised alerts on **17 of 23** attacker servers.
+- **Unseen infections:** all **5 of 5** detected. The model raised alerts on **18 of 23** attacker servers.
 - **Blocking (per-address rule):** **14 of 23** attacker servers blocked, at least one in every infection. **2** normal servers wrongly blocked (two Microsoft addresses), **0** if you use the starter allowlist.
-- **False alerts:** 12 of 498 normal flows were flagged. 7 are internal traffic (never blocked; 6 of them are probably the attacker moving inside the network, which the labels count as normal), 2 are the Microsoft addresses, 3 are long Google connections (shown on the dashboard, not blocked).
-- **Cross-validation:** catches **65 %** of malicious flows with **95 %** of alerts being correct, at about a **1 %** false-alarm rate.
+- **False alerts:** 10 of 498 normal flows were flagged (12 with the previous model). Internal traffic is never blocked; the two Microsoft addresses are the only normal servers blocked.
+- **Cross-validation:** catches **79 %** of malicious flows (65 % before the timing features) with **96 %** of alerts being correct, at about a **1 %** false-alarm rate.
 - **Port scans:** the lab nmap scan is detected after 50 ports. A scanner inside your own network is reported as "detected, not blocked", and so is a scan "from" a server your network used in the last 24 hours (the sender may be faked).
-- **Why "only" 27 % of malicious flows are flagged on the holdout:** most malicious flows are the same beacon repeated thousands of times. Flagging one or two is enough to block the server.
+- **Malicious flows flagged on the holdout: 71 %** (27 % before). Most malicious flows are the same beacon repeated thousands of times; the timing features now recognise the repetition itself.
 
 What is **not** proven: performance on real company networks, live capture speed, against malware families very different from the training data. See "What is not shown" in the README.
 

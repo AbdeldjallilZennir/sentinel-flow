@@ -120,6 +120,22 @@ class Scorers(unittest.TestCase):
             self.assertTrue(0.0 <= f[k] <= 1.0, (k, f[k]))
         self.assertIn(f["is_alert"], (0, 1))
 
+    def test_conversation_history_carries_across_batches(self):
+        # Live records arrive in many small batches; the conversation
+        # features must not depend on where the batches split.
+        self.need_onnx()
+        beacon = [daemon.validate(mutate(dst_ip="8.8.8.8", src_port=50000 + i,
+                                         first_seen_us=GOOD["first_seen_us"] + i * 60_000_000,
+                                         last_seen_us=GOOD["last_seen_us"] + i * 60_000_000))
+                  for i in range(8)]
+        one_by_one, together = daemon.OnnxScorer(), daemon.OnnxScorer()
+        a = [daemon.finalize([dict(r)], one_by_one)[0] for r in beacon]
+        b = daemon.finalize([dict(r) for r in beacon], together)
+        self.assertEqual([r["ml_c2_proba"] for r in a], [r["ml_c2_proba"] for r in b])
+        self.assertEqual(len(one_by_one.conversations), 1)
+        conv = next(iter(one_by_one.conversations.convs.values()))
+        self.assertEqual(len(conv.conns), 8)
+
     def test_calibration_is_monotone_and_maps_threshold(self):
         self.need_onnx()
         import numpy as np

@@ -20,7 +20,10 @@ Standard library only. Transport:
 
 Scoring (--scorer auto|onnx|heuristic, default auto):
   onnx       models/c2_detector.onnx + models/anomaly_iforest.onnx, verified
-             against models/model_meta.json (SHA-256, feature list)
+             against models/model_meta.json (SHA-256, feature list).
+             Feature version 2 adds conversation history per (host,
+             server, port, protocol), kept in memory for this run only
+             (features.ConversationTracker): a restart starts it empty.
   heuristic  Phase 2 noisy-OR baseline, stdlib only
 
 Usage:
@@ -206,7 +209,7 @@ class OnnxScorer:
                      not part of the alert score, see model_meta.json)
     """
 
-    def __init__(self, models_dir=MODELS_DIR):
+    def __init__(self, models_dir=MODELS_DIR, lab_conversations=False):
         import hashlib
         import numpy as np
         import onnxruntime as ort
@@ -233,6 +236,8 @@ class OnnxScorer:
         self.meta = meta
         self.name = meta["model_version"]
         self.input = meta["input_name"]
+        # Records must reach score() in the order the sensor exported them.
+        self.conversations = features.ConversationTracker(lab=lab_conversations)
 
     def _lgbm_norm(self, p):
         cal = self.meta["lgbm_calibration"]
@@ -249,7 +254,9 @@ class OnnxScorer:
         if not batch:
             return
         np = self.np
-        X = np.array([self.features.extract(f) for f in batch], dtype=np.float32)
+        conv = self.conversations
+        X = np.array([self.features.extract(f, conv.observe(f)) for f in batch],
+                     dtype=np.float32)
         lg = self.meta["lgbm"]
         p = self.sessions["lgbm"].run([lg["output"]], {self.input: X})[0][:, lg["column"]]
         s = self.sessions["iforest"].run([self.meta["iforest"]["output"]],
@@ -262,10 +269,10 @@ class OnnxScorer:
             f["ml_model"] = self.name
 
 
-def make_scorer(kind, models_dir=MODELS_DIR, log_fn=None):
+def make_scorer(kind, models_dir=MODELS_DIR, log_fn=None, lab_conversations=False):
     if kind in ("auto", "onnx"):
         try:
-            return OnnxScorer(models_dir)
+            return OnnxScorer(models_dir, lab_conversations)
         except Exception as e:   # ImportError, missing/corrupt model, mismatch
             if kind == "onnx":
                 raise
@@ -581,6 +588,9 @@ def main():
                     help="rows per write (README: 1,000 rows or 1 s)")
     ap.add_argument("--scorer", choices=["auto", "onnx", "heuristic"], default="auto")
     ap.add_argument("--models-dir", default=MODELS_DIR)
+    ap.add_argument("--lab-conversations", action="store_true",
+                    help="also build conversation history for private servers (host-only "
+                         "lab tests). The model was trained on Internet servers only.")
     ap.add_argument("--alert-risk-policy", choices=["any", "severe", "none"], default="severe",
                     help="which nDPI risks raise is_alert on their own (default severe; "
                          "'any' is the Phase 2 rule, which fires on ~18%% of benign flows, "
@@ -630,7 +640,7 @@ def main():
     signal.signal(signal.SIGTERM, on_signal)
 
     stores, ch = build_backends(args)
-    scorer = make_scorer(args.scorer, args.models_dir, log)
+    scorer = make_scorer(args.scorer, args.models_dir, log, args.lab_conversations)
     log(f"scorer: {scorer.name}  alert-risk-policy: {args.alert_risk_policy}")
     mit = None
     if args.mitigate != "none":

@@ -49,9 +49,19 @@ IFOREST_PARAMS = dict(n_estimators=200, max_samples=256, contamination="auto",
 
 
 def load():
-    rows = [json.loads(l) for l in open(DATA)]
-    rows = [r for r in rows if r["label"] in (0, 1)]          # drop ambiguous
-    X = np.array([features.extract(r) for r in rows], dtype=np.float32)
+    """Labeled rows + features. Conversation features are computed over ALL
+    rows of a capture (ambiguous ones too: the daemon sees them live), in
+    file order = sensor export order, with a fresh tracker per capture."""
+    rows, feats, tracker, capture = [], [], None, None
+    for line in open(DATA):
+        r = json.loads(line)
+        if (r["grp"], r["pcap"]) != capture:
+            capture, tracker = (r["grp"], r["pcap"]), features.ConversationTracker()
+        conv = tracker.observe(r)
+        if r["label"] in (0, 1):                               # drop ambiguous
+            rows.append(r)
+            feats.append(features.extract(r, conv))
+    X = np.array(feats, dtype=np.float32)
     y = np.array([r["label"] for r in rows], dtype=np.int32)
     g = np.array([r["grp"] for r in rows])
     return rows, X, y, g

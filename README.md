@@ -45,7 +45,7 @@ The original blueprint and roadmap are kept in [`sentinel-flow/docs/BLUEPRINT.md
 │ PLANE 2 — engine-ml/daemon.py (Python standard library + optional ONNX)   │
 │  • ZMQ PULL (pyzmq if present, else the C zmq_sink helper)                 │
 │  • validates the 23 fields, batches 1,000 rows or 1 s                      │
-│  • features.py (61 features) ─► ONNX LightGBM  ─► ml_anomaly_score         │
+│  • features.py (66 features) ─► ONNX LightGBM  ─► ml_anomaly_score         │
 │                                 ONNX IsolationForest ─► ml_iforest_score   │
 │    (falls back to a stdlib heuristic when onnxruntime is unavailable)      │
 │  • + 6 enrichment columns = 29 columns per flow                            │
@@ -82,8 +82,8 @@ The original blueprint and roadmap are kept in [`sentinel-flow/docs/BLUEPRINT.md
 | Memory safety | **0** AddressSanitizer / LeakSanitizer / UBSan errors | 16 PCAPs (1,890 flows) in Part 3; 10 PCAPs with `-A 30` in Part 4. LeakSanitizer shown active on a deliberate 4,242-byte leak. | [Part 3 §3.1](sentinel-flow/docs/REPORT.md#part-3), [Part 4 §1.2](sentinel-flow/docs/REPORT.md#part-4) |
 | Delivery sensor → consumer | 9,694 / 9,694 flows, 0 dropped | Same merged capture, consumer attached. Earlier silent loss fixed (receive high-water mark). | [Part 3 §3.6](sentinel-flow/docs/REPORT.md#part-3) |
 | Labeled dataset | **12,250 flows from 624 PCAPs** | 2,846 malicious flows from 51 captures (40 malware-traffic-analysis.net cases with hand-curated IOC labels, plus nDPI samples). 0 rejected. Built through the production sensor → ZMQ path. Part 3 had 9,659 flows / 28 malicious captures; 23 cases added in Part 7. | [Part 3 §4–5](sentinel-flow/docs/REPORT.md#part-3), [Part 7 §1–2](sentinel-flow/docs/REPORT.md#part-7) |
-| Model quality (grouped CV) | **ROC-AUC 0.984 ± 0.001, PR-AUC 0.945 ± 0.005** | Current model `203d33a1`, 5-fold grouped by capture, 5 seeds. At the 0.80 alert threshold: recall 0.65 ± 0.04, precision 0.95 ± 0.01, FPR 1.0 % ± 0.1 %. Part 3 model on the smaller set: PR-AUC 0.905, recall 0.45 (different data, not like-for-like). | [Part 7 §0](sentinel-flow/docs/REPORT.md#part-7), [Part 3 §7.1](sentinel-flow/docs/REPORT.md#part-3) |
-| Unseen infections (holdout) | **5 / 5 infections detected**; 17 / 23 malicious endpoints alerted; precision 98.6 %, FPR 2.4 % | Current model `203d33a1`. 5 captures never used in training, replayed through the live daemon. Per-IP blocking: 14 / 23 malicious IPs, 2 benign (Microsoft) IPs. 12 false alerts out of 498 benign flows: 7 internal (never blocked, 6 likely attacker WinRM), 2 Microsoft, 3 long Google TLS sessions (alerted, not blocked). Previous model `2005d025`: 15 / 23 endpoints, 3 false alerts, same blocking result. | [Part 7 §3](sentinel-flow/docs/REPORT.md#part-7), [Part 3 §9.1](sentinel-flow/docs/REPORT.md#part-3) |
+| Model quality (grouped CV) | **ROC-AUC 0.991 ± 0.001, PR-AUC 0.972 ± 0.003** | Current model `58fb9fc3` (adds conversation timing features), 5-fold grouped by capture, 5 seeds. At the 0.80 alert threshold: recall 0.79 ± 0.03, precision 0.96 ± 0.01, FPR 1.0 % ± 0.1 %. Previous model `203d33a1` on the same data: PR-AUC 0.945, recall 0.65. C2 servers with ≥ 1 alert: 124 ± 4 of 186 (previous 128 ± 4). | [Part 9](sentinel-flow/docs/REPORT.md#part-9), [Part 7 §0](sentinel-flow/docs/REPORT.md#part-7) |
+| Unseen infections (holdout) | **5 / 5 infections detected**; 18 / 23 malicious endpoints alerted; 71 % of malicious flows; precision 99.5 %, FPR 2.0 % | Current model `58fb9fc3`. 5 captures never used in training, replayed through the live daemon. Per-IP blocking: 14 / 23 malicious IPs, 2 benign (Microsoft) IPs. 10 false alerts out of 498 benign flows. Previous model `203d33a1`: 17 / 23 endpoints, 27 % of malicious flows, 12 false alerts, same blocking result. | [Part 9](sentinel-flow/docs/REPORT.md#part-9), [Part 7 §3](sentinel-flow/docs/REPORT.md#part-7) |
 | ONNX export | 0 / 9,597 alert decisions differ from the native models | max \|Δp\| 3.7e-4 (LightGBM) | [Part 3 §8.1](sentinel-flow/docs/REPORT.md#part-3) |
 | Batch scoring in the daemon | **740 flows in 40.3 ms**; 1,000-flow batches in 36–47 ms | Feature extraction + both ONNX models, 1 onnxruntime thread | [Part 4 §7.2](sentinel-flow/docs/REPORT.md#part-4), [Part 3 §9.2](sentinel-flow/docs/REPORT.md#part-3) |
 | Closed loop (capture → score → block → drop) | **0 / 50 packets delivered from the blocked C2 address; nft counter exactly 50 packets / 6,400 bytes; 50 / 50 delivered from a normal peer** | Holdout DarkGate capture replayed with `sensor -r`. Daemon scored it (0.991) and blocked both C2 endpoints in nftables automatically. Throwaway network namespaces. | [Part 4 §7.2](sentinel-flow/docs/REPORT.md#part-4) |
@@ -266,6 +266,7 @@ Scoring and alerts:
 |---|---|---|
 | `--scorer auto\|onnx\|heuristic` | `auto`: the ML model if it loads, otherwise the heuristic. `onnx`: exit if the model can't load. `heuristic`: simple formula only (never blocks) | auto |
 | `--models-dir DIR` | where the `.onnx` files and `model_meta.json` are | `engine-ml/models` |
+| `--lab-conversations` | also keep conversation history (timing features) for private servers. Only for host-only lab tests: the model was trained on Internet servers only | off |
 | `--alert-risk-policy severe\|any\|none` | which nDPI risks set `is_alert` on their own (an ML score ≥ 0.80 always does). `severe`: the 6 serious risks. `any`: every risk, the old Part 2 rule (fires on ~18 % of normal flows). `none`: ML score only | severe |
 
 Blocking (`--mitigate`; rules explained in [How detection works](#how-detection-works)):
@@ -506,7 +507,7 @@ python3 engine-ml/models/compare_holdout.py OLD_evaluation_holdout.json engine-m
 - **Alert rule (`is_alert`):** ML score ≥ 0.80 or one of 6 severe nDPI risks (DGA domain, risky domain, malicious fingerprint or certificate, possible exploit, malware host contacted). This `severe` policy is the default since Part 6. In Part 3, alerting on *any* nDPI risk flagged ~18 % of real Windows background flows.
 - **Blocking policy (per remote IP, Part 6):** one flow ≥ 0.95 from a trained model, or 2 flows ≥ 0.80 to the same IP within an hour, or a severe nDPI risk (the DGA-domain risk alone also needs ML ≥ 0.80, because nDPI raises it on random-looking CDN names too). The DNS server of a DNS / DoT / DoH flow is never a target: blocking a resolver takes the machine offline. A separate rule blocks the *source* of a port scan or host sweep. The ML model can't see scans: each probe looks harmless on its own. `--block-high-score 0.80 --block-repeat 1` restores the per-flow rule.
 
-**Blocking on the 5 holdout infections (current model `203d33a1`, remote IPs):**
+**Blocking on the 5 holdout infections (remote IPs; the per-IP rows are the same for the current model `58fb9fc3` and the previous `203d33a1`, the per-flow row was measured with `203d33a1`):**
 
 | Rule | Malicious IPs blocked | Infections with a block | Benign IPs blocked |
 |---|---|---|---|

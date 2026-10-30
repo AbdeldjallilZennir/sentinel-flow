@@ -1,35 +1,35 @@
 {
-  "model_version": "lgbm+iforest-fv1-203d33a1",
+  "model_version": "lgbm+iforest-fv2-58fb9fc3",
   "risk_policy": "severe",
   "summary": {
     "ml (ml_anomaly_score >= 0.80)": {
-      "tp": 825,
-      "fp": 12,
+      "tp": 2175,
+      "fp": 10,
       "malicious": 3084,
       "benign": 498,
-      "recall": 0.26750972762645914,
-      "fpr": 0.024096385542168676,
-      "precision": 0.985663082437276,
+      "recall": 0.7052529182879378,
+      "fpr": 0.020080321285140562,
+      "precision": 0.9954233409610984,
       "captures_detected": 5
     },
     "severe_risk OR ml": {
-      "tp": 826,
-      "fp": 18,
+      "tp": 2176,
+      "fp": 16,
       "malicious": 3084,
       "benign": 498,
-      "recall": 0.26783398184176394,
-      "fpr": 0.03614457831325301,
-      "precision": 0.9786729857819905,
+      "recall": 0.7055771725032426,
+      "fpr": 0.0321285140562249,
+      "precision": 0.9927007299270073,
       "captures_detected": 5
     },
     "any_risk OR ml (Phase 2 rule)": {
-      "tp": 2972,
-      "fp": 93,
+      "tp": 2973,
+      "fp": 92,
       "malicious": 3084,
       "benign": 498,
-      "recall": 0.9636835278858625,
-      "fpr": 0.18674698795180722,
-      "precision": 0.9696574225122349,
+      "recall": 0.9640077821011673,
+      "fpr": 0.18473895582329317,
+      "precision": 0.9699836867862969,
       "captures_detected": 5
     },
     "phase2_heuristic >= 0.80": {
@@ -43,7 +43,7 @@
       "captures_detected": 0
     },
     "ml_endpoints": {
-      "alerted": 17,
+      "alerted": 18,
       "total": 23
     }
   },
@@ -55,63 +55,63 @@
       "sensor_exit": 0,
       "sensor_exported": 2327,
       "daemon_stored": 2327,
-      "scorer": "lgbm+iforest-fv1-203d33a1",
+      "scorer": "lgbm+iforest-fv2-58fb9fc3",
       "labels": {
         "benign": 100,
         "malicious": 2227
       },
       "malicious_flows": 2227,
-      "ml_detected": 81,
-      "ml_false_alerts": 6,
-      "is_alert_detected": 81,
-      "is_alert_false_alerts": 6,
+      "ml_detected": 1435,
+      "ml_false_alerts": 5,
+      "is_alert_detected": 1435,
+      "is_alert_false_alerts": 5,
       "risk_any_false_alerts": 29,
       "benign_flows": 100,
       "top_malicious": [
         {
-          "dst": "170.130.55.46:80",
+          "dst": "170.130.55.150:80",
           "app": "HTTP",
-          "score": 0.99335,
-          "p": 0.984434
+          "score": 0.998628,
+          "p": 0.997059
         },
         {
           "dst": "170.130.55.150:80",
           "app": "HTTP",
-          "score": 0.991045,
-          "p": 0.979039
+          "score": 0.998603,
+          "p": 0.997007
         },
         {
           "dst": "170.130.55.150:80",
           "app": "HTTP",
-          "score": 0.989077,
-          "p": 0.974434
+          "score": 0.998599,
+          "p": 0.996997
         },
         {
           "dst": "170.130.55.150:80",
           "app": "HTTP",
-          "score": 0.986308,
-          "p": 0.967953
+          "score": 0.99857,
+          "p": 0.996936
         },
         {
           "dst": "170.130.55.150:80",
           "app": "HTTP",
-          "score": 0.979387,
-          "p": 0.951752
+          "score": 0.998562,
+          "p": 0.996919
         }
       ],
       "malicious_endpoints": {
         "170.130.55.150": {
           "flows": 2212,
-          "alerted": 70,
-          "max_score": 0.991045,
+          "alerted": 1424,
+          "max_score": 0.998628,
           "services": [
             "80/HTTP"
           ]
         },
         "170.130.55.117": {
           "flows": 8,
-          "alerted": 8,
-          "max_score": 0.958004,
+          "alerted": 7,
+          "max_score": 0.995745,
           "services": [
             "443/TLS",
             "8080/TLS"
@@ -120,15 +120,15 @@
         "201.148.107.213": {
           "flows": 2,
           "alerted": 1,
-          "max_score": 0.917098,
+          "max_score": 0.889854,
           "services": [
             "443/TLS"
           ]
         },
         "193.3.19.230": {
           "flows": 1,
-          "alerted": 0,
-          "max_score": 0.780497,
+          "alerted": 1,
+          "max_score": 0.813758,
           "services": [
             "80/HTTP"
           ]
@@ -136,7 +136,7 @@
         "65.108.196.140": {
           "flows": 1,
           "alerted": 0,
-          "max_score": 0.76785,
+          "max_score": 0.742374,
           "services": [
             "443/TLS"
           ]
@@ -144,7 +144,7 @@
         "170.130.165.37": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.945527,
+          "max_score": 0.941007,
           "services": [
             "80/HTTP"
           ]
@@ -152,7 +152,7 @@
         "170.130.165.107": {
           "flows": 1,
           "alerted": 0,
-          "max_score": 0.084692,
+          "max_score": 0.081732,
           "services": [
             "1444/Unknown"
           ]
@@ -160,13 +160,13 @@
         "170.130.55.46": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.99335,
+          "max_score": 0.98299,
           "services": [
             "80/HTTP"
           ]
         }
       },
-      "endpoints_alerted": 5
+      "endpoints_alerted": 6
     },
     {
       "case": "2023-11-20",
@@ -175,56 +175,56 @@
       "sensor_exit": 0,
       "sensor_exported": 740,
       "daemon_stored": 740,
-      "scorer": "lgbm+iforest-fv1-203d33a1",
+      "scorer": "lgbm+iforest-fv2-58fb9fc3",
       "labels": {
         "benign": 50,
         "ambiguous": 3,
         "malicious": 687
       },
       "malicious_flows": 687,
-      "ml_detected": 686,
+      "ml_detected": 684,
       "ml_false_alerts": 0,
-      "is_alert_detected": 686,
+      "is_alert_detected": 684,
       "is_alert_false_alerts": 0,
       "risk_any_false_alerts": 10,
       "benign_flows": 50,
       "top_malicious": [
         {
-          "dst": "45.154.98.21:80",
+          "dst": "188.246.224.221:2351",
           "app": "HTTP",
-          "score": 0.998866,
-          "p": 0.997345
-        },
-        {
-          "dst": "45.154.98.21:80",
-          "app": "HTTP",
-          "score": 0.997716,
-          "p": 0.994654
-        },
-        {
-          "dst": "45.154.98.21:80",
-          "app": "HTTP",
-          "score": 0.994368,
-          "p": 0.986818
+          "score": 0.999511,
+          "p": 0.998952
         },
         {
           "dst": "188.246.224.221:2351",
           "app": "HTTP",
-          "score": 0.990096,
-          "p": 0.976819
+          "score": 0.999488,
+          "p": 0.998902
         },
         {
           "dst": "188.246.224.221:2351",
           "app": "HTTP",
-          "score": 0.989655,
-          "p": 0.975786
+          "score": 0.999485,
+          "p": 0.998897
+        },
+        {
+          "dst": "188.246.224.221:2351",
+          "app": "HTTP",
+          "score": 0.999468,
+          "p": 0.998861
+        },
+        {
+          "dst": "188.246.224.221:8080",
+          "app": "HTTP_Proxy",
+          "score": 0.999461,
+          "p": 0.998844
         }
       ],
       "malicious_endpoints": {
         "188.246.224.221": {
           "flows": 684,
-          "alerted": 683,
-          "max_score": 0.990096,
+          "alerted": 681,
+          "max_score": 0.999511,
           "services": [
             "2351/HTTP",
             "8080/HTTP_Proxy"
@@ -233,7 +233,7 @@
         "45.154.98.21": {
           "flows": 3,
           "alerted": 3,
-          "max_score": 0.998866,
+          "max_score": 0.998428,
           "services": [
             "80/HTTP"
           ]
@@ -248,7 +248,7 @@
       "sensor_exit": 0,
       "sensor_exported": 28,
       "daemon_stored": 28,
-      "scorer": "lgbm+iforest-fv1-203d33a1",
+      "scorer": "lgbm+iforest-fv2-58fb9fc3",
       "labels": {
         "benign": 12,
         "ambiguous": 5,
@@ -265,39 +265,39 @@
         {
           "dst": "5.161.113.150:25658",
           "app": "TLS",
-          "score": 0.995072,
-          "p": 0.988464
+          "score": 0.996644,
+          "p": 0.992806
         },
         {
           "dst": "45.59.170.106:443",
           "app": "TLS",
-          "score": 0.994656,
-          "p": 0.987492
+          "score": 0.990213,
+          "p": 0.979025
         },
         {
           "dst": "5.161.113.150:25658",
           "app": "TLS",
-          "score": 0.979995,
-          "p": 0.953175
-        },
-        {
-          "dst": "49.13.65.235:80",
-          "app": "HTTP",
-          "score": 0.971515,
-          "p": 0.933326
+          "score": 0.980076,
+          "p": 0.957298
         },
         {
           "dst": "5.161.113.150:25658",
           "app": "TLS",
-          "score": 0.932271,
-          "p": 0.841471
+          "score": 0.943538,
+          "p": 0.878987
+        },
+        {
+          "dst": "5.161.113.150:25658",
+          "app": "TLS",
+          "score": 0.941476,
+          "p": 0.874567
         }
       ],
       "malicious_endpoints": {
         "5.161.113.150": {
           "flows": 6,
           "alerted": 5,
-          "max_score": 0.995072,
+          "max_score": 0.996644,
           "services": [
             "25658/TLS"
           ]
@@ -305,7 +305,7 @@
         "66.135.17.87": {
           "flows": 2,
           "alerted": 1,
-          "max_score": 0.810287,
+          "max_score": 0.836598,
           "services": [
             "443/TLS"
           ]
@@ -313,7 +313,7 @@
         "45.59.170.106": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.994656,
+          "max_score": 0.990213,
           "services": [
             "443/TLS"
           ]
@@ -321,7 +321,7 @@
         "49.13.65.235": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.971515,
+          "max_score": 0.908912,
           "services": [
             "80/HTTP"
           ]
@@ -329,7 +329,7 @@
         "167.71.107.109": {
           "flows": 1,
           "alerted": 1,
-          "max_score": 0.841294,
+          "max_score": 0.808373,
           "services": [
             "80/HTTP"
           ]
@@ -344,15 +344,15 @@
       "sensor_exit": 0,
       "sensor_exported": 152,
       "daemon_stored": 152,
-      "scorer": "lgbm+iforest-fv1-203d33a1",
+      "scorer": "lgbm+iforest-fv2-58fb9fc3",
       "labels": {
         "benign": 4,
         "malicious": 148
       },
       "malicious_flows": 148,
-      "ml_detected": 45,
+      "ml_detected": 43,
       "ml_false_alerts": 0,
-      "is_alert_detected": 46,
+      "is_alert_detected": 44,
       "is_alert_false_alerts": 3,
       "risk_any_false_alerts": 3,
       "benign_flows": 4,
@@ -360,39 +360,39 @@
         {
           "dst": "185.95.159.55:443",
           "app": "TLS",
-          "score": 0.997413,
-          "p": 0.993945
+          "score": 0.996164,
+          "p": 0.991778
+        },
+        {
+          "dst": "5.10.250.239:9000",
+          "app": "HTTP",
+          "score": 0.996063,
+          "p": 0.991562
         },
         {
           "dst": "185.95.159.55:443",
           "app": "TLS",
-          "score": 0.996594,
-          "p": 0.992027
+          "score": 0.995489,
+          "p": 0.990332
         },
         {
           "dst": "185.95.159.55:443",
           "app": "TLS",
-          "score": 0.996421,
-          "p": 0.991622
+          "score": 0.994165,
+          "p": 0.987493
         },
         {
-          "dst": "185.95.159.55:443",
-          "app": "TLS",
-          "score": 0.995772,
-          "p": 0.990105
-        },
-        {
-          "dst": "185.95.159.55:443",
-          "app": "TLS",
-          "score": 0.993876,
-          "p": 0.985666
+          "dst": "5.10.250.239:9000",
+          "app": "HTTP",
+          "score": 0.99401,
+          "p": 0.987162
         }
       ],
       "malicious_endpoints": {
         "5.10.250.239": {
           "flows": 136,
-          "alerted": 36,
-          "max_score": 0.952731,
+          "alerted": 34,
+          "max_score": 0.996063,
           "services": [
             "443/TLS",
             "9000/HTTP"
@@ -401,7 +401,7 @@
         "185.95.159.55": {
           "flows": 10,
           "alerted": 8,
-          "max_score": 0.997413,
+          "max_score": 0.996164,
           "services": [
             "443/TLS"
           ]
@@ -409,7 +409,7 @@
         "104.21.24.30": {
           "flows": 2,
           "alerted": 1,
-          "max_score": 0.982167,
+          "max_score": 0.983643,
           "services": [
             "443/TLS"
           ]
@@ -424,7 +424,7 @@
       "sensor_exit": 0,
       "sensor_exported": 345,
       "daemon_stored": 345,
-      "scorer": "lgbm+iforest-fv1-203d33a1",
+      "scorer": "lgbm+iforest-fv2-58fb9fc3",
       "labels": {
         "benign": 332,
         "ambiguous": 2,
@@ -432,48 +432,48 @@
       },
       "malicious_flows": 11,
       "ml_detected": 4,
-      "ml_false_alerts": 6,
+      "ml_false_alerts": 5,
       "is_alert_detected": 4,
-      "is_alert_false_alerts": 6,
+      "is_alert_false_alerts": 5,
       "risk_any_false_alerts": 42,
       "benign_flows": 332,
       "top_malicious": [
         {
           "dst": "80.253.249.145:80",
           "app": "HTTP",
-          "score": 0.994551,
-          "p": 0.987245
+          "score": 0.99492,
+          "p": 0.989112
         },
         {
           "dst": "185.39.19.96:443",
           "app": "HTTP",
-          "score": 0.980811,
-          "p": 0.955086
+          "score": 0.988084,
+          "p": 0.974461
+        },
+        {
+          "dst": "185.39.19.96:443",
+          "app": "HTTP",
+          "score": 0.983032,
+          "p": 0.963632
         },
         {
           "dst": "80.253.249.145:80",
           "app": "HTTP",
-          "score": 0.975452,
-          "p": 0.942541
-        },
-        {
-          "dst": "185.39.19.96:443",
-          "app": "HTTP",
-          "score": 0.970093,
-          "p": 0.929999
+          "score": 0.949257,
+          "p": 0.891243
         },
         {
           "dst": "104.21.96.46:443",
           "app": "HTTP",
-          "score": 0.589507,
-          "p": 0.391928
+          "score": 0.361363,
+          "p": 0.258078
         }
       ],
       "malicious_endpoints": {
         "45.93.20.50": {
           "flows": 4,
           "alerted": 0,
-          "max_score": 0.319653,
+          "max_score": 0.294878,
           "services": [
             "443/TLS"
           ]
@@ -481,7 +481,7 @@
         "65.181.111.158": {
           "flows": 2,
           "alerted": 0,
-          "max_score": 0.095177,
+          "max_score": 0.079816,
           "services": [
             "443/TLS"
           ]
@@ -489,7 +489,7 @@
         "80.253.249.145": {
           "flows": 2,
           "alerted": 2,
-          "max_score": 0.994551,
+          "max_score": 0.99492,
           "services": [
             "80/HTTP"
           ]
@@ -497,7 +497,7 @@
         "185.39.19.96": {
           "flows": 2,
           "alerted": 2,
-          "max_score": 0.980811,
+          "max_score": 0.988084,
           "services": [
             "443/HTTP"
           ]
@@ -505,7 +505,7 @@
         "104.21.96.46": {
           "flows": 1,
           "alerted": 0,
-          "max_score": 0.589507,
+          "max_score": 0.361363,
           "services": [
             "443/HTTP"
           ]
