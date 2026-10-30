@@ -62,7 +62,7 @@ bash scripts/run_live.sh -i enp0s8 -a 192.168.56.1 --serve
 The dashboard listens only on the VM's loopback. Reach it through an SSH tunnel:
 
 ```bash
-ssh -p 2222 -L 8080:127.0.0.1:8080 joe@localhost     # leave this open
+ssh -p 2222 -L 8080:127.0.0.1:8080 user@localhost    # leave this open
 ```
 
 Then open **http://127.0.0.1:8080**. The page updates itself every 10 s; the data is also at `/api/panels.json`.
@@ -97,7 +97,7 @@ sudo engine-ml/.venv-runtime/bin/python engine-ml/mitigator.py teardown         
 ```bash
 bash sentinel-flow/scripts/install_deps.sh --with-docker      # then log out and back in (docker group)
 cd ~/cv_work/sentinel-flow && docker compose up -d             # first start downloads the Grafana plugin
-ssh -p 2222 -L 8080:127.0.0.1:8080 -L 3000:127.0.0.1:3000 joe@localhost   # from the admin machine
+ssh -p 2222 -L 8080:127.0.0.1:8080 -L 3000:127.0.0.1:3000 user@localhost  # from the admin machine
 ```
 
 Grafana: **http://127.0.0.1:3000** (anonymous read-only; `admin` / `sentinel`). The daemon writes to ClickHouse automatically when it's reachable, unless `--no-clickhouse` is given.

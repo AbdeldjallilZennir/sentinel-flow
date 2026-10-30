@@ -47,3 +47,14 @@ sentinel-flow/engine-ml/.venv-runtime/
 downloads/
 uni_captures/
 sentinel-flow/engine-ml/datasets/mta_lab/
+
+# Personal notes, study plan and local tools: kept on disk, never published.
+HANDOFF.md
+IMPROVEMENT_PLAN.md
+NEW_DATA_REVIEW.md
+suggestion.md
+theoryAndSolution.md
+STUDY_PLAN.md
+sentinel-flow/docs/NEXT_STEPS.md
+sentinel-flow/scripts/autocapture.sh
+.claude/

@@ -2,8 +2,8 @@
 
 This guide explains the whole project in simple words: what it does, how the parts fit together, what was done in each phase, and **every tool** that was used, with a short "what is it / why here" for each one.
 
-- Exact numbers and evidence: [REPORT.md](REPORT.md) (Parts 1–8)
-- What to do next: [NEXT_STEPS.md](NEXT_STEPS.md)
+- Results: [RESULTS.md](RESULTS.md); evidence for every number: [REPORT.md](REPORT.md) (Parts 1–9)
+- How to run everything: [USAGE.md](USAGE.md)
 - Short technical overview: the root [README.md](../../README.md)
 
 ## Contents
@@ -128,7 +128,7 @@ Two flows of work exist side by side:
 
 Details and limits: [REPORT.md Part 8](REPORT.md#part-8).
 
-**Cleanup.** Unused files were removed (old copies, PDF exports, unused tools), the seven reports were merged into [REPORT.md](REPORT.md), and this guide and [NEXT_STEPS.md](NEXT_STEPS.md) were written.
+**Cleanup.** Unused files were removed (old copies, PDF exports, unused tools), the seven reports were merged into [REPORT.md](REPORT.md), and this guide was written.
 
 ---
 
@@ -236,14 +236,13 @@ Each entry: **what it is** → **why it's used here** → *where in the project*
 - **VirtualBox** — Runs virtual machines. → The two-machine lab (sensor VM + attacker/admin machine). *`docs/LAB_SETUP.md`*
 - **SSH tunnel** — Forwards a port from a remote machine over SSH. → Lets you open the VM's dashboard (port 8080) in your own browser safely.
 - **Git / GitHub** — Git records every version of the code; GitHub hosts it online. A **commit** is a saved version; a **push** uploads commits. A **personal access token** is a password for scripts; never paste it into chats.
-- **git stash** — A drawer where unfinished changes are put aside. → Holds unfinished code for attack-family data (see NEXT_STEPS).
 - **Claude Code** — The AI coding assistant that did much of the building, testing and documentation in these sessions, through the terminal. Each report says what was and wasn't verified.
 
 ---
 
 ## 7. The project's own programs and scripts
 
-How to run each one, with every option and `make` target: [README, "How to run it"](../../README.md#how-to-run-it).
+How to run each one, with every option and `make` target: [USAGE.md](USAGE.md).
 
 | File | What it does |
 |---|---|
@@ -278,7 +277,7 @@ Model `lgbm+iforest-fv2-58fb9fc3` (Part 9):
 - **Port scans:** the lab nmap scan is detected after 50 ports. A scanner inside your own network is reported as "detected, not blocked", and so is a scan "from" a server your network used in the last 24 hours (the sender may be faked).
 - **Malicious flows flagged on the holdout: 71 %** (27 % before). Most malicious flows are the same beacon repeated thousands of times; the timing features now recognise the repetition itself.
 
-What is **not** proven: performance on real company networks, live capture speed, against malware families very different from the training data. See "What is not shown" in the README.
+What is **not** proven: performance on real company networks, live capture speed, against malware families very different from the training data. See "What is not shown" in [RESULTS.md](RESULTS.md#what-is-not-shown).
 
 ---
 
@@ -312,7 +311,7 @@ sudo python3 engine-ml/mitigator.py unblock 203.0.113.7
 make verify-closed-loop
 ```
 
-Retraining is easiest on Colab; see [NEXT_STEPS.md](NEXT_STEPS.md#colab-commands).
+Retraining is easiest on Colab; see [USAGE.md](USAGE.md#7-retraining-the-model).
 
 ---
 
@@ -335,7 +334,7 @@ cv_work/                      the git repository
     ├── scripts/              install, live run, Colab scripts
     ├── tests/                closed-loop blocking test
     ├── pcaps/                4 small test recordings
-    ├── docs/                 GUIDE.md (this file), REPORT.md, NEXT_STEPS.md,
+    ├── docs/                 GUIDE.md (this file), USAGE.md, RESULTS.md, REPORT.md,
     │                         LAB_SETUP.md, BLUEPRINT.md, screenshots
     ├── docker-compose.yml    ClickHouse + Grafana
     └── Makefile              build / test / data / train shortcuts

@@ -121,4 +121,4 @@ help:
 	@echo "  make holdout         Evaluate on the 5 held-out captures through the daemon"
 	@echo "  make phase3          dataset + train + holdout"
 	@echo ""
-	@echo "Full explanation: README.md, section 'How to run it'."
+	@echo "Full explanation: docs/USAGE.md."

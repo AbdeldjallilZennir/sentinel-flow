@@ -2,7 +2,7 @@
 
 All phase reports in one file, in the order they were written. Each part keeps its original text; only headings were moved one level down, cross-references were changed from file names (`Part3.md`) to part names (Part 3), and image paths were fixed. Numbers in an older part describe the code and model **at that time**; later parts say what changed.
 
-For a plain-language explanation of the project and every tool, read [GUIDE.md](GUIDE.md). Planned next steps are in [NEXT_STEPS.md](NEXT_STEPS.md).
+For a plain-language explanation of the project and every tool, read [GUIDE.md](GUIDE.md). Results summary: [RESULTS.md](RESULTS.md). How to run: [USAGE.md](USAGE.md).
 
 ## Contents
 
@@ -25,7 +25,7 @@ For a plain-language explanation of the project and every tool, read [GUIDE.md](
 
 **Project:** SentinelFlow — zero-decrypt encrypted traffic analyzer
 **Component:** Part 1, C packet capture sensor
-**Tree:** `/home/joe/cv_work/sentinel-flow/sensor-c/`
+**Tree:** `~/cv_work/sentinel-flow/sensor-c/`
 **Date:** October 21, 2026
 **Status:** fixes applied, end-to-end delivery still blocked
 
@@ -87,14 +87,14 @@ The sensor was built on Kali Linux.
 |---|---|
 | Compiler | GCC 14.3.0 |
 | Build system | CMake 4.3.4 |
-| nDPI | 6.1.0-5906-90eb617, built from source at `/home/joe/nDPI` |
-| nDPI header | `/home/joe/nDPI/src/include/ndpi_api.h` |
-| nDPI library | `/home/joe/nDPI/src/lib/libndpi.so` |
+| nDPI | 6.1.0-5906-90eb617, built from source at `~/nDPI` |
+| nDPI header | `~/nDPI/src/include/ndpi_api.h` |
+| nDPI library | `~/nDPI/src/lib/libndpi.so` |
 | libpcap | 1.10.6, `/usr/include/pcap.h` present |
 | libzmq | 4.3.5, runtime soname `libzmq.so.5` only |
 | libcjson | 1.7.18, runtime soname `libcjson.so.1` only |
 
-nDPI was never `make install`ed. The build points at the source tree with `NDPI_ROOT` (`$ENV{HOME}/nDPI` by default) and `find_library(ndpi ... NO_DEFAULT_PATH)` inside `/home/joe/nDPI/src/lib`. Anything that runs the sensor or ndpiReader against that library needs `LD_LIBRARY_PATH=/home/joe/nDPI/src/lib`. The ndpiReader cross-check in §7.4 was run that way.
+nDPI was never `make install`ed. The build points at the source tree with `NDPI_ROOT` (`$ENV{HOME}/nDPI` by default) and `find_library(ndpi ... NO_DEFAULT_PATH)` inside `~/nDPI/src/lib`. Anything that runs the sensor or ndpiReader against that library needs `LD_LIBRARY_PATH=~/nDPI/src/lib`. The ndpiReader cross-check in §7.4 was run that way.
 
 #### 3.2 Apt could not supply `-dev` packages
 
@@ -105,8 +105,8 @@ Consequences, one library at a time:
 
 - **libzmq.** The runtime loader can open `libzmq.so.5`. There was no `zmq.h`, and there was no `libzmq.so` development symlink. A symlink was created by hand so `-lzmq` resolves, and `src/zmq.h` was written by hand so the sensor compiles. That header is a project file, not a copy installed by the package manager.
 - **libcjson.** Only `libcjson.so.1` was present. There was no development header. A symlink was created, and both the header and the implementation were embedded: `src/cJSON.h` and `src/cJSON.c`. Fix 4a then stopped the build from linking the system `.so` at all, so the embedded `.c` is the only cJSON in the process.
-- **uthash.** No `uthash-dev` package. `src/uthash.h` was copied from `/home/joe/nDPI/src/lib/third_party/include/uthash.h`.
-- **nDPI.** There is no installed `libndpi-dev`. Includes come from `/home/joe/nDPI/src/include` and `/home/joe/nDPI/src/lib/third_party/include`. The shared object is the one in the nDPI build tree.
+- **uthash.** No `uthash-dev` package. `src/uthash.h` was copied from `~/nDPI/src/lib/third_party/include/uthash.h`.
+- **nDPI.** There is no installed `libndpi-dev`. Includes come from `~/nDPI/src/include` and `~/nDPI/src/lib/third_party/include`. The shared object is the one in the nDPI build tree.
 
 libpcap is the exception: the header and the library were already usable, and CMake uses `find_library(pcap REQUIRED)`.
 
@@ -114,7 +114,7 @@ libpcap is the exception: the header and the library were already usable, and CM
 
 The sensor is not a portable "link against distro nDPI" binary. It is tied to:
 
-1. the nDPI 6.1 tree at `/home/joe/nDPI` (API and ABI of that build),
+1. the nDPI 6.1 tree at `~/nDPI` (API and ABI of that build),
 2. a hand-written `zmq.h` matched to libzmq 4.3.5 as present here,
 3. the embedded cJSON, whose number printer is the one that emits the timestamps in §9,
 4. a copied `uthash.h`.
@@ -516,7 +516,7 @@ Other arithmetic that uses only printed fields:
 - Timestamps again print as the same number (`1581113000000000.0`) across a 1096.09 ms flow.
 
 > [!success] ndpiReader on the TLS file only
-> Command: `/home/joe/nDPI/example/ndpiReader -i pcaps/test_tls_full.pcap` with `LD_LIBRARY_PATH=/home/joe/nDPI/src/lib`.
+> Command: `~/nDPI/example/ndpiReader -i pcaps/test_tls_full.pcap` with `LD_LIBRARY_PATH=~/nDPI/src/lib`.
 >
 > - Unique flows: 1
 > - Detected protocol: `ntop` — packets 109, bytes 73982, flows 1
@@ -692,7 +692,7 @@ This section is the constraint on any slide, abstract, or oral answer that cites
 
 **May be said, because it was observed.**
 
-- The sensor is a C11 program built with GCC 14.3.0 and CMake 4.3.4 against nDPI 6.1.0-5906-90eb617 from `/home/joe/nDPI` (not installed system-wide), libpcap 1.10.6, and libzmq 4.3.5.
+- The sensor is a C11 program built with GCC 14.3.0 and CMake 4.3.4 against nDPI 6.1.0-5906-90eb617 from `~/nDPI` (not installed system-wide), libpcap 1.10.6, and libzmq 4.3.5.
 - Distro `-dev` packages for nDPI, uthash, cJSON, and libzmq could not be installed: `apt-get` failed while fetching, `kali.download` unreachable, IPv6 route missing. Headers for uthash, cJSON, and libzmq are therefore in-tree.
 - The build produces `sensor`, `zmq_sink`, and `test_stats` with zero warnings under `-Wall -Wextra -Wpedantic -O2`, and `sensor` does not link `libcjson`.
 - Export direction is the first packet seen (`orig_*`), not the sorted uthash key. Byte counts follow that same comparison and use IPv4 `ip_len`.
@@ -733,7 +733,7 @@ This section is the constraint on any slide, abstract, or oral answer that cites
 
 **Project:** SentinelFlow — zero-decrypt encrypted traffic analyzer
 **Component:** Part 1, C packet capture sensor
-**Tree:** `/home/joe/cv_work/sentinel-flow/sensor-c/`
+**Tree:** `~/cv_work/sentinel-flow/sensor-c/`
 **Date:** 2026-10-22
 **Status:** The four items from Part 1 §10 that were still open — ZMQ 0-message delivery (§8), timestamp precision (§9), direction/byte-accounting unit test (§10 item 8), and the ndpiReader `-v 2` + risk-mask cross-check (§10 items 4 & 5) — are now fixed, built, and have the evidence quoted below.
 
@@ -821,8 +821,8 @@ Command for a single run:
 ```bash
 cd sensor-c/build
 rm -f /tmp/ndpi_flows.sock
-LD_LIBRARY_PATH=/home/joe/nDPI/src/lib ./zmq_sink -n 1 > /tmp/sink_out.json &
-sleep 0.2 && LD_LIBRARY_PATH=/home/joe/nDPI/src/lib \
+LD_LIBRARY_PATH=~/nDPI/src/lib ./zmq_sink -n 1 > /tmp/sink_out.json &
+sleep 0.2 && LD_LIBRARY_PATH=~/nDPI/src/lib \
     ./sensor -r ../../pcaps/test_tls_full.pcap
 wait
 cat /tmp/sink_out.json
@@ -987,8 +987,8 @@ Case 1 is the one that would fail if export ever reverted to the canonical key: 
 Command template (one PCAP shown):
 
 ```bash
-LD_LIBRARY_PATH=/home/joe/nDPI/src/lib \
-    /home/joe/nDPI/example/ndpiReader -i pcaps/test_tls_full.pcap -v 2
+LD_LIBRARY_PATH=~/nDPI/src/lib \
+    ~/nDPI/example/ndpiReader -i pcaps/test_tls_full.pcap -v 2
 ```
 
 #### 5.1 TLS — JA4 character-for-character match
@@ -1049,16 +1049,16 @@ Protocol labels agree: ndpiReader `HTTP.Google`, sensor `HTTP.Google`.
 
 #### 6.1 PCAP chosen
 
-`/home/joe/nDPI/tests/cfgs/default/pcap/tls_invalid_reads.pcap`. This file contains a TLS flow that negotiates an obsolete TLS version (v1.1 or older), which trips nDPI's `NDPI_TLS_OBSOLETE_VERSION` risk flag (bit value `128` in the risk mask).
+`~/nDPI/tests/cfgs/default/pcap/tls_invalid_reads.pcap`. This file contains a TLS flow that negotiates an obsolete TLS version (v1.1 or older), which trips nDPI's `NDPI_TLS_OBSOLETE_VERSION` risk flag (bit value `128` in the risk mask).
 
 #### 6.2 Command and output
 
 ```bash
 rm -f /tmp/ndpi_flows.sock
-LD_LIBRARY_PATH=/home/joe/nDPI/src/lib ./zmq_sink > /tmp/risk_sink.json 2>/dev/null &
+LD_LIBRARY_PATH=~/nDPI/src/lib ./zmq_sink > /tmp/risk_sink.json 2>/dev/null &
 sleep 0.2
-LD_LIBRARY_PATH=/home/joe/nDPI/src/lib \
-    ./sensor -r /home/joe/nDPI/tests/cfgs/default/pcap/tls_invalid_reads.pcap 2>/dev/null
+LD_LIBRARY_PATH=~/nDPI/src/lib \
+    ./sensor -r ~/nDPI/tests/cfgs/default/pcap/tls_invalid_reads.pcap 2>/dev/null
 # ... send SIGINT to sink after the sensor finishes
 ```
 
@@ -1079,7 +1079,7 @@ Round-trip check on the (now full-precision) timestamps: `1252380859943054 − 1
 
 Not required by the task but captured while searching; useful for Phase 2 panel tests:
 
-| PCAP (in `/home/joe/nDPI/tests/cfgs/default/pcap/`) | Example `ndpi_risk_str` |
+| PCAP (in `~/nDPI/tests/cfgs/default/pcap/`) | Example `ndpi_risk_str` |
 |---|---|
 | `tls_invalid_reads.pcap` | `Obsolete TLS (v1.1 or older)` |
 | `http_invalid_server.pcap` | `HTTP Susp User-Agent` |
@@ -1130,7 +1130,7 @@ Everything in Part 1 §12 under "must not be said" that was not fixed above rema
 
 **Project:** SentinelFlow — zero-decrypt encrypted traffic analyzer
 **Component:** Phase 2, flow ingestion, storage and query
-**Tree:** `/home/joe/cv_work/sentinel-flow/`
+**Tree:** `~/cv_work/sentinel-flow/`
 **Date:** 2026-10-23
 **Status:** Built and verified end to end on this host. All 12 flows that `sensor` exported from the 6 test PCAPs arrived over `ipc:///tmp/ndpi_flows.sock`. All 12 were validated, enriched and stored in SQLite and JSONL (run A, ClickHouse down) and also in ClickHouse (run B). The four query panels give identical results from SQLite and ClickHouse, and the Grafana dashboard renders them from ClickHouse.
 
@@ -1329,16 +1329,16 @@ MergeTree    first_seen_us, app_protocol, src_ip    12
 Both runs use the same script; only the daemon arguments differ:
 
 ```bash
-cd /home/joe/cv_work/sentinel-flow
-export LD_LIBRARY_PATH=/home/joe/nDPI/src/lib
+cd ~/cv_work/sentinel-flow
+export LD_LIBRARY_PATH=~/nDPI/src/lib
 rm -rf engine-ml/data                                    # fresh store
 python3 engine-ml/daemon.py [ARGS] 2> daemon.stderr &    # background
 DPID=$!
 # wait until daemon.stderr contains " ready"
 for p in pcaps/test_dns.pcap pcaps/test_http.pcapng pcaps/test_tls_full.pcap \
-         /home/joe/nDPI/tests/cfgs/default/pcap/tls_invalid_reads.pcap \
-         /home/joe/nDPI/tests/cfgs/default/pcap/http_invalid_server.pcap \
-         /home/joe/nDPI/tests/cfgs/default/pcap/malware.pcap; do
+         ~/nDPI/tests/cfgs/default/pcap/tls_invalid_reads.pcap \
+         ~/nDPI/tests/cfgs/default/pcap/http_invalid_server.pcap \
+         ~/nDPI/tests/cfgs/default/pcap/malware.pcap; do
     ./sensor-c/build/sensor -r "$p"
 done
 sleep 2                                                  # > flush interval
@@ -1622,7 +1622,7 @@ The screenshot shows the donut (TLS 4 / HTTP 3 / DNS 2 / ICMP, HTTP.Google, TLS.
 # zero-dependency path (no Docker needed)
 make sensor
 python3 engine-ml/daemon.py &                 # or: make daemon
-LD_LIBRARY_PATH=/home/joe/nDPI/src/lib ./sensor-c/build/sensor -r pcaps/test_tls_full.pcap
+LD_LIBRARY_PATH=~/nDPI/src/lib ./sensor-c/build/sensor -r pcaps/test_tls_full.pcap
 python3 engine-ml/query_dashboard.py          # or: make dashboard / make dashboard-web
 
 # full stack
@@ -1671,7 +1671,7 @@ python3 engine-ml/daemon.py --from-jsonl engine-ml/data/flows.jsonl --backend cl
 ## Part 3: Phases 1–3 Status, Audit, and the Encrypted-Traffic ML Pipeline
 
 **Project:** SentinelFlow — zero-decrypt encrypted traffic analyzer
-**Tree:** `/home/joe/cv_work/sentinel-flow/`
+**Tree:** `~/cv_work/sentinel-flow/`
 **Date:** 2026-10-23
 **Host:** Kali Linux 6.16.8, Intel i7-1165G7 (8 threads), Python 3.14.7, nDPI 6.1.0-5906, libzmq 4.3.5, ClickHouse 24.8.14.39, Grafana 13.0.1
 **Status:**
@@ -2371,7 +2371,7 @@ sqlite: 8 | heuristic_v1 | ml_c2_proba min/max -1.0/-1.0
 ### 12. Reproduce
 
 ```bash
-cd /home/joe/cv_work/sentinel-flow
+cd ~/cv_work/sentinel-flow
 make sensor && make test-sensor && make test-engine            # Phase 1 + daemon tests
 docker compose up -d                                            # ClickHouse + Grafana (optional)
 python3 -m venv --system-site-packages engine-ml/.venv-train
@@ -2406,7 +2406,7 @@ Downloaded captures (`engine-ml/datasets/mta*/`) and the training virtualenv are
 ## Part 4: Active Mitigation (nftables), Active Flow Timeout, Blocking Policy
 
 **Project:** SentinelFlow — zero-decrypt encrypted traffic analyzer
-**Tree:** `/home/joe/cv_work/sentinel-flow/`
+**Tree:** `~/cv_work/sentinel-flow/`
 **Date:** 2026-10-23
 **Host:** Kali Linux 6.16.8, nftables 1.1.3, iproute2 6.16.0, clang 19.1.7, Python 3.14.7
 **Status:**
@@ -2695,7 +2695,7 @@ tests/verify_closed_loop.sh: line 159: kill: (346768) - No such process
 `/tmp/sf_closed_loop.7rwCV1/daemon.log`:
 
 ```text
-  File "/home/joe/cv_work/sentinel-flow/engine-ml/daemon.py", line 202, in __init__
+  File "~/cv_work/sentinel-flow/engine-ml/daemon.py", line 202, in __init__
     import onnxruntime as ort
 ModuleNotFoundError: No module named 'onnxruntime'
 ```
@@ -2816,7 +2816,7 @@ Nothing has been committed.
 ## Part 5: Packaging, VM Deployment, First Live Test, Risk-Mask Fix, Retrain
 
 **Project:** SentinelFlow — zero-decrypt encrypted traffic analyzer
-**Tree:** `/home/joe/cv_work/sentinel-flow/`, GitHub `AbdeldjallilZennir/sentinel-flow`
+**Tree:** `~/cv_work/sentinel-flow/`, GitHub `AbdeldjallilZennir/sentinel-flow`
 **Date:** 2026-10-24
 **Status:**
 - The project is packaged (portfolio README, installer, live runner, lab guide) and was installed on a fresh Ubuntu Server 24.04 VM, where all tests pass and results match the development host.
@@ -2863,7 +2863,7 @@ Installing on a fresh Ubuntu Server 24.04.4 VM (2 CPUs, 3.8 GB RAM) over SSH fou
 #### 1.2 Result on the VM
 
 ```text
-libndpi: /home/joe/nDPI/src/lib/libndpi.so.6.1.0
+libndpi: ~/nDPI/src/lib/libndpi.so.6.1.0
 ONNX scorer loads: lgbm+iforest-fv1-6e986f14
 === Results: 13 passed, 0 failed ===        (test_flow)
 === Results: 24 passed, 0 failed ===        (test_stats)
@@ -3327,7 +3327,7 @@ Each bug was reproduced, or shown with a new test, before it was fixed, and chec
 
 ## Part 9 — Conversation timing features (`fv2`), retrain
 
-Date: 2026-10-27. Model `lgbm+iforest-fv2-58fb9fc3` replaces `203d33a1`. Plan items P0.3, P0.5 and P2 in `IMPROVEMENT_PLAN.md`.
+Date: 2026-10-27. Model `lgbm+iforest-fv2-58fb9fc3` replaces `203d33a1`.
 
 ### 0. Summary
 
@@ -3344,7 +3344,7 @@ Date: 2026-10-27. Model `lgbm+iforest-fv2-58fb9fc3` replaces `203d33a1`. Plan it
 | Holdout: malicious flows caught / false alerts | 27 % / 12 | **71 %** / 10 |
 | Holdout: per-IP blocks (malicious / benign) | 14/23 / 2 | 14/23 / 2 |
 | Real benign captures, dry-run blocks per hour (own PC ×2, Windows 7) | 19, 11, 85 | 22, 9, 67 |
-| 5 RAT cases (`NEW_DATA_REVIEW.md`): cases with the C2 blocked | 4/5 | 4/5 |
+| 5 RAT cases (local test captures): cases with the C2 blocked | 4/5 | 4/5 |
 
 ### 1. Definitions
 
